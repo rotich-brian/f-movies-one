@@ -7,7 +7,7 @@ export default function SearchBar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (searchQuery.trim()) {
