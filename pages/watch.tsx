@@ -35,28 +35,6 @@ interface MovieDetails {
   imdb_id?: string; // Add IMDB ID
 }
 
-// Interfaces
-// interface MovieDetails {
-//   title: string;
-//   year: string;
-//   quality: string;
-//   imdb_rating?: string;
-//   imdb_votes?: string;
-//   image_src?: string;
-//   urls?: string[];
-//   plot?: string;
-//   description?: string; // Keep for backward compatibility
-//   actors?: string[];
-//   director?: string;
-//   downloads?: string;
-//   genres?: string[];
-//   imdb_url?: string;
-//   link?: string;
-//   release_date?: string;
-//   runtime?: string;
-//   trailer?: string;
-// }
-
 interface ServerLink {
   url: string;
   quality: "SD" | "HD";
@@ -308,48 +286,6 @@ export default function WatchPage() {
     }
   };
 
-  // Fetch movie details
-  // useEffect(() => {
-  //   const fetchMovieDetails = async () => {
-  //     if (!link) return;
-
-  //     try {
-  //       setIsLoading(true);
-  //       const response = await fetch(
-  //         `${process.env.NEXT_PUBLIC_API_URL}/getLinks`,
-  //         {
-  //           method: "POST",
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //           },
-  //           body: JSON.stringify({
-  //             link,
-  //             title,
-  //             year,
-  //             quality: "HD",
-  //             image_src: "placeholder.png",
-  //             imdb_rating: "8.2",
-  //             imdb_votes: "15,000 votes",
-  //           }),
-  //         }
-  //       );
-
-  //       if (!response.ok) {
-  //         throw new Error("Failed to fetch movie details");
-  //       }
-
-  //       const data = await response.json();
-  //       setMovieDetails(data);
-  //     } catch (err) {
-  //       setError(err instanceof Error ? err.message : "An error occurred");
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
-
-  //   fetchMovieDetails();
-  // }, [link, title, year]);
-
   useEffect(() => {
     const fetchMovieDetails = async () => {
       if (!link) return;
@@ -478,31 +414,13 @@ export default function WatchPage() {
   };
 
   // Handle downloads
-  const handleGroupedDownload = async (url: string, quality: "SD" | "HD") => {
+  const handleGroupedDownload = (url: string, quality: "SD" | "HD") => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/download`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            url,
-            title: movieDetails?.title,
-            year: movieDetails?.year,
-          }),
-        }
-      );
+      if (!url) throw new Error("Invalid download URL");
 
-      if (!response.ok) {
-        throw new Error("Download failed");
-      }
-
-      const data = await response.json();
       const a = document.createElement("a");
-      a.href = `${process.env.NEXT_PUBLIC_API_URL}/downloads/${data.filename}`;
-      a.download = data.filename;
+      a.href = url;
+      a.download = url.split("/").pop() || "download"; // Use the file name from the URL
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -618,52 +536,6 @@ export default function WatchPage() {
         )}
 
         {/* Video Player Section */}
-        {/* <div className="relative w-full mb-8">
-          {isLoading ? (
-            <div className="w-full aspect-video bg-gray-900 rounded-lg">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="animate-pulse flex flex-col items-center">
-                  <div className="w-16 h-16 bg-gray-700 rounded-full mb-4"></div>
-                  <div className="h-4 w-32 bg-gray-700 rounded"></div>
-                </div>
-              </div>
-            </div>
-          ) : currentVideoUrl && !videoError ? (
-            <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
-              <video
-                className="w-full h-full"
-                controls
-                autoPlay
-                src={currentVideoUrl}
-                poster={movieDetails?.image_src || "/placeholder.png"}
-                onError={handleVideoError}
-              >
-                Your browser does not support the video tag.
-              </video>
-            </div>
-          ) : (
-            <div className="w-full aspect-video bg-gray-900 rounded-lg">
-              <div className="absolute inset-0 flex items-center justify-center flex-col">
-                {videoError ? (
-                  <>
-                    <div className="text-red-500 mb-4">
-                      Video playback error. Please try another server.
-                    </div>
-                    <div className="bg-cyan-400 rounded-full p-4 cursor-pointer hover:bg-cyan-500 transition-colors">
-                      <Play className="w-12 h-12 text-white" />
-                    </div>
-                  </>
-                ) : (
-                  <div className="bg-cyan-400 rounded-full p-4 cursor-pointer hover:bg-cyan-500 transition-colors">
-                    <Play className="w-12 h-12 text-white" />
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div> */}
-
-        {/* Video Player Section */}
         <div className="relative w-full mb-8">
           {isLoading ? (
             <div className="w-full aspect-video bg-gray-900 rounded-lg">
@@ -737,57 +609,6 @@ export default function WatchPage() {
             </div>
           )}
         </div>
-
-        {/* Server Selection */}
-        {/* <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
-          <div className="flex flex-wrap gap-2">
-            {isLoading ? (
-              <div className="flex gap-2">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="animate-pulse h-10 w-24 bg-gray-700 rounded-md"
-                  ></div>
-                ))}
-              </div>
-            ) : (
-              serverLinks.map((link) => (
-                <button
-                  key={link.serverNumber}
-                  onClick={() => handleServerChange(link.serverNumber)}
-                  className={`px-6 py-2 rounded-md transition-colors ${
-                    activeServer === link.serverNumber
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-100 bg-opacity-10 text-gray-300 hover:bg-opacity-20"
-                  }`}
-                >
-                  Server {link.serverNumber}
-                </button>
-              ))
-            )}
-          </div>
-
-          {isLoading ? (
-            <div className="animate-pulse h-10 w-32 bg-gray-700 rounded-md"></div>
-          ) : (
-            <button
-              onClick={
-                movieDetails?.trailer
-                  ? handleStreamHD
-                  : () => {
-                      const hdLink = serverLinks.find(
-                        (link) => link.quality === "HD"
-                      );
-                      if (hdLink) setCurrentVideoUrl(hdLink.url);
-                    }
-              }
-              className="px-6 py-2 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-md hover:from-red-600 hover:to-rose-700 transition-all shadow-lg transform hover:scale-105 flex items-center justify-center"
-            >
-              <Play className="w-4 h-4 mr-2" />
-              {movieDetails?.trailer ? "Watch Trailer" : "Stream HD"}
-            </button>
-          )}
-        </div> */}
 
         {/* Server Selection - Only show when direct player is active */}
         {(!useIframe || iframeError) && showDirectPlayer && (
