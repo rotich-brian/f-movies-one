@@ -237,9 +237,12 @@ export default function Home() {
 
         {/* Action Button */}
         <div className="text-center">
-          <button className="bg-cyan-400 text-white px-6 py-3 rounded-md hover:bg-cyan-500 transition-colors">
+          <Link
+            href="/home"
+            className="bg-cyan-400 text-white px-6 py-3 rounded-md hover:bg-cyan-500 transition-colors"
+          >
             Go to home page
-          </button>
+          </Link>
         </div>
 
         {/* Information Sections */}
