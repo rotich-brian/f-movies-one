@@ -14,11 +14,9 @@ class MyDocument extends Document {
 
   render() {
     return (
-      <Html>
+      <Html lang="en">
         <Head>
           <meta charSet="utf-8" />
-          <meta name="viewport" content="width=device-width,initial-scale=1" />
-          <title>Fmovies - Watch Free Movies Online</title>
           <meta
             name="description"
             content="Fmovies is the best site to watch free movies online without downloading. Stream free movies here."

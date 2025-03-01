@@ -38,9 +38,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#1a1d24]">
       <Head>
-        <title>FMovies - Your Streaming Directory</title>
-        <meta name="description" content="Find the best streaming content" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Fmovies - Watch Free Movies Online</title>
+        <meta
+          name="description"
+          content="Fmovies is the best site to watch free movies online without downloading. Stream free movies here."
+        />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
       </Head>
 
       {/* Navigation */}
