@@ -361,7 +361,7 @@ const MovieSection = ({
         {isLoading
           ? [...Array(10)].map((_, index) => <MovieCardSkeleton key={index} />)
           : movies
-              .slice(0, 20)
+              .slice(0, 15)
               .map((movie) => (
                 <MovieCard
                   key={movie.id}
