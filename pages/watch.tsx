@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// Interfaces
 interface MovieDetails {
   title: string;
   year: string;
@@ -33,7 +32,30 @@ interface MovieDetails {
   release_date?: string;
   runtime?: string;
   trailer?: string;
+  imdb_id?: string; // Add IMDB ID
 }
+
+// Interfaces
+// interface MovieDetails {
+//   title: string;
+//   year: string;
+//   quality: string;
+//   imdb_rating?: string;
+//   imdb_votes?: string;
+//   image_src?: string;
+//   urls?: string[];
+//   plot?: string;
+//   description?: string; // Keep for backward compatibility
+//   actors?: string[];
+//   director?: string;
+//   downloads?: string;
+//   genres?: string[];
+//   imdb_url?: string;
+//   link?: string;
+//   release_date?: string;
+//   runtime?: string;
+//   trailer?: string;
+// }
 
 interface ServerLink {
   url: string;
@@ -262,6 +284,16 @@ export default function WatchPage() {
     []
   );
 
+  const [useIframe, setUseIframe] = useState<boolean>(true);
+  const [iframeError, setIframeError] = useState<boolean>(false);
+  const [showDirectPlayer, setShowDirectPlayer] = useState<boolean>(false);
+
+  const extractImdbId = (url?: string): string | null => {
+    if (!url) return null;
+    const match = url.match(/tt\d+/);
+    return match ? match[0] : null;
+  };
+
   // Handle search
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -277,6 +309,47 @@ export default function WatchPage() {
   };
 
   // Fetch movie details
+  // useEffect(() => {
+  //   const fetchMovieDetails = async () => {
+  //     if (!link) return;
+
+  //     try {
+  //       setIsLoading(true);
+  //       const response = await fetch(
+  //         `${process.env.NEXT_PUBLIC_API_URL}/getLinks`,
+  //         {
+  //           method: "POST",
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //           },
+  //           body: JSON.stringify({
+  //             link,
+  //             title,
+  //             year,
+  //             quality: "HD",
+  //             image_src: "placeholder.png",
+  //             imdb_rating: "8.2",
+  //             imdb_votes: "15,000 votes",
+  //           }),
+  //         }
+  //       );
+
+  //       if (!response.ok) {
+  //         throw new Error("Failed to fetch movie details");
+  //       }
+
+  //       const data = await response.json();
+  //       setMovieDetails(data);
+  //     } catch (err) {
+  //       setError(err instanceof Error ? err.message : "An error occurred");
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+
+  //   fetchMovieDetails();
+  // }, [link, title, year]);
+
   useEffect(() => {
     const fetchMovieDetails = async () => {
       if (!link) return;
@@ -307,9 +380,21 @@ export default function WatchPage() {
         }
 
         const data = await response.json();
+
+        // Extract IMDB ID from imdb_url if available
+        if (data.imdb_url && !data.imdb_id) {
+          data.imdb_id = extractImdbId(data.imdb_url);
+        }
+
         setMovieDetails(data);
+
+        // If no IMDB ID is available, fallback to direct player
+        if (!data.imdb_id) {
+          setUseIframe(false);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
+        setUseIframe(false);
       } finally {
         setIsLoading(false);
       }
@@ -317,6 +402,16 @@ export default function WatchPage() {
 
     fetchMovieDetails();
   }, [link, title, year]);
+
+  // Add function to handle iframe errors
+  const handleIframeError = () => {
+    setIframeError(true);
+    setUseIframe(false);
+  };
+
+  const handlePlayButtonClick = () => {
+    setShowDirectPlayer(true);
+  };
 
   // Process URLs into server links
   useEffect(() => {
@@ -523,7 +618,7 @@ export default function WatchPage() {
         )}
 
         {/* Video Player Section */}
-        <div className="relative w-full mb-8">
+        {/* <div className="relative w-full mb-8">
           {isLoading ? (
             <div className="w-full aspect-video bg-gray-900 rounded-lg">
               <div className="absolute inset-0 flex items-center justify-center">
@@ -566,10 +661,85 @@ export default function WatchPage() {
               </div>
             </div>
           )}
+        </div> */}
+
+        {/* Video Player Section */}
+        <div className="relative w-full mb-8">
+          {isLoading ? (
+            <div className="w-full aspect-video bg-gray-900 rounded-lg">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="animate-pulse flex flex-col items-center">
+                  <div className="w-16 h-16 bg-gray-700 rounded-full mb-4"></div>
+                  <div className="h-4 w-32 bg-gray-700 rounded"></div>
+                </div>
+              </div>
+            </div>
+          ) : useIframe && movieDetails?.imdb_id && !iframeError ? (
+            <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
+              <iframe
+                src={`https://vidsrc.me/embed/movie?imdb=${movieDetails.imdb_id}`}
+                style={{ width: "100%", height: "100%" }}
+                frameBorder="0"
+                referrerPolicy="origin"
+                allowFullScreen
+                onError={handleIframeError}
+              />
+            </div>
+          ) : showDirectPlayer && currentVideoUrl && !videoError ? (
+            <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
+              <video
+                className="w-full h-full"
+                controls
+                autoPlay
+                src={currentVideoUrl}
+                poster={movieDetails?.image_src || "/placeholder.png"}
+                onError={handleVideoError}
+              >
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          ) : (
+            <div
+              className="w-full aspect-video bg-gray-900 rounded-lg relative cursor-pointer"
+              onClick={handlePlayButtonClick}
+              style={{
+                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url(${
+                  movieDetails?.image_src || "/placeholder.png"
+                })`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center flex-col">
+                {videoError || iframeError ? (
+                  <>
+                    <div className="text-red-500 mb-4">
+                      Video playback error. Please try another server.
+                    </div>
+                    <div className="bg-cyan-400 rounded-full p-4 cursor-pointer hover:bg-cyan-500 transition-colors">
+                      <Play className="w-12 h-12 text-white" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-white text-xl mb-4 font-bold">
+                      {movieDetails?.title}
+                    </div>
+                    <div className="bg-cyan-400 rounded-full p-4 cursor-pointer hover:bg-cyan-500 transition-colors">
+                      <Play className="w-12 h-12 text-white" />
+                    </div>
+                    <div className="text-white text-sm mt-4">
+                      {useIframe ? "Play with VidSrc" : "Play"}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Server Selection */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+        {/* <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <div className="flex flex-wrap gap-2">
             {isLoading ? (
               <div className="flex gap-2">
@@ -617,7 +787,76 @@ export default function WatchPage() {
               {movieDetails?.trailer ? "Watch Trailer" : "Stream HD"}
             </button>
           )}
-        </div>
+        </div> */}
+
+        {/* Server Selection - Only show when direct player is active */}
+        {(!useIframe || iframeError) && showDirectPlayer && (
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+            <div className="flex flex-wrap gap-2">
+              {isLoading ? (
+                <div className="flex gap-2">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="animate-pulse h-10 w-24 bg-gray-700 rounded-md"
+                    ></div>
+                  ))}
+                </div>
+              ) : (
+                serverLinks.map((link) => (
+                  <button
+                    key={link.serverNumber}
+                    onClick={() => handleServerChange(link.serverNumber)}
+                    className={`px-6 py-2 rounded-md transition-colors ${
+                      activeServer === link.serverNumber
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-100 bg-opacity-10 text-gray-300 hover:bg-opacity-20"
+                    }`}
+                  >
+                    Server {link.serverNumber}
+                  </button>
+                ))
+              )}
+            </div>
+
+            {isLoading ? (
+              <div className="animate-pulse h-10 w-32 bg-gray-700 rounded-md"></div>
+            ) : (
+              <button
+                onClick={
+                  movieDetails?.trailer
+                    ? handleStreamHD
+                    : () => {
+                        const hdLink = serverLinks.find(
+                          (link) => link.quality === "HD"
+                        );
+                        if (hdLink) setCurrentVideoUrl(hdLink.url);
+                      }
+                }
+                className="px-6 py-2 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-md hover:from-red-600 hover:to-rose-700 transition-all shadow-lg transform hover:scale-105 flex items-center justify-center"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                {movieDetails?.trailer ? "Watch Trailer" : "Stream HD"}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Toggle button to switch between iframe and direct player */}
+        {!isLoading && movieDetails?.imdb_id && (
+          <div className="flex justify-center mb-4">
+            <button
+              onClick={() => {
+                setUseIframe(!useIframe);
+                setIframeError(false);
+                setShowDirectPlayer(false);
+              }}
+              className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors"
+            >
+              {useIframe ? "Switch Player" : "Switch Player"}
+            </button>
+          </div>
+        )}
 
         {/* Movie Details Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
@@ -640,7 +879,7 @@ export default function WatchPage() {
                   {movieDetails?.year ? `${movieDetails.year}` : ""}
                 </h1>
 
-                <div className="relative aspect-[2/3] mb-4">
+                <div className="relative aspect-[2/3] mb-4 hidden md:block">
                   <img
                     src={movieDetails?.image_src || `/placeholder.png`}
                     alt={movieDetails?.title}
@@ -705,7 +944,7 @@ export default function WatchPage() {
             ) : (
               <>
                 <h3 className="text-white font-semibold text-xl mb-4">
-                  Details
+                  Movie Details
                 </h3>
 
                 <div className="flex items-center gap-4 mb-6">

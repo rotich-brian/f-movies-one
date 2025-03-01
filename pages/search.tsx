@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
-import { Menu, Search, X } from "lucide-react";
+import { Menu, Search, X, Play } from "lucide-react";
 import Link from "next/link";
 
 interface MovieResult {
@@ -285,10 +285,7 @@ export default function SearchResults() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {searchResults.map((result, index) => (
               <div key={index} className="relative group cursor-pointer">
-                <div
-                  className="relative aspect-[2/3] overflow-hidden rounded-lg bg-gray-800"
-                  onClick={() => handleClick(result)}
-                >
+                <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-gray-800">
                   <img
                     src={result.image_src || "/api/placeholder/220/330"}
                     alt={result.title}
@@ -299,6 +296,16 @@ export default function SearchResults() {
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {/* Play Button on hover */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <button
+                        onClick={() => handleClick(result)}
+                        className="bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-full p-3 transition-all duration-200 border border-white/30"
+                      >
+                        <Play className="h-8 w-8 text-white fill-white" />
+                      </button>
+                    </div>
+
                     <div className="absolute bottom-0 left-0 right-0 p-4">
                       <div className="text-white text-sm font-medium">
                         {result.year}

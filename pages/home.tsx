@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { Menu, Search, X, Star } from "lucide-react";
+import { Menu, Search, X, Star, Play } from "lucide-react";
 import Link from "next/link";
 import FeaturedMovieSkeleton from "./FeaturedMovieSkeleton";
 import Image from "next/image";
@@ -46,12 +46,98 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 //     year: "2024",
 //   }));
 
+// const MovieCard = ({
+//   movie,
+//   onClick,
+// }: {
+//   movie: Movie;
+//   onClick?: (movie: Movie) => void;
+// }) => {
+//   const router = useRouter();
+
+//   const handleClick = () => {
+//     if (onClick) {
+//       onClick(movie);
+//     } else {
+//       router.push({
+//         pathname: "/watch",
+//         query: {
+//           id: movie.id,
+//           title: movie.title,
+//           year: movie.year,
+//           link: movie.link,
+//         },
+//       });
+//     }
+//   };
+
+//   return (
+//     <div className="relative group cursor-pointer">
+//       <div
+//         className="relative aspect-[2/3] overflow-hidden rounded-lg bg-gray-800"
+//         onClick={handleClick}
+//       >
+//         {/* <img
+//           src={movie.imageUrl || movie.image_src || "/api/placeholder/220/330"}
+//           alt={movie.title}
+//           className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-200"
+//           loading="lazy"
+//           onError={(e) => {
+//             e.currentTarget.src = "/placeholder.png";
+//           }}
+//         /> */}
+//         <Image
+//           src={movie.imageUrl || movie.image_src || "/api/placeholder/220/330"}
+//           alt={movie.title}
+//           className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-200"
+//           fill
+//           sizes="(max-width: 768px) 100vw, 220px"
+//           priority={false}
+//           style={{ objectFit: "cover" }}
+//           onError={(e) => {
+//             // Next/image handles errors differently, this is the updated approach
+//             e.currentTarget.src = "/placeholder.png";
+//           }}
+//         />
+//         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+//           <div className="absolute bottom-0 left-0 right-0 p-4">
+//             <div className="text-white text-sm font-medium">
+//               {movie.year}
+//               {(movie.rating || movie.imdb_rating) && (
+//                 <span className="ml-2 bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded">
+//                   ⭐ {movie.rating || movie.imdb_rating}
+//                 </span>
+//               )}
+//             </div>
+//             {movie.quality && (
+//               <div className="text-cyan-400 text-sm mt-1">{movie.quality}</div>
+//             )}
+//             {movie.imdb_votes && (
+//               <div className="text-gray-400 text-xs mt-1">
+//                 {movie.imdb_votes} votes
+//               </div>
+//             )}
+//           </div>
+//         </div>
+//       </div>
+//       <div className="mt-2">
+//         <h3 className="text-gray-300 group-hover:text-white text-sm font-medium truncate">
+//           {movie.title}
+//         </h3>
+//         <div className="text-gray-500 text-xs">{movie.year}</div>
+//       </div>
+//     </div>
+//   );
+// };
+
 const MovieCard = ({
   movie,
   onClick,
+  isTvShow,
 }: {
   movie: Movie;
   onClick?: (movie: Movie) => void;
+  isTvShow?: boolean;
 }) => {
   const router = useRouter();
 
@@ -73,19 +159,7 @@ const MovieCard = ({
 
   return (
     <div className="relative group cursor-pointer">
-      <div
-        className="relative aspect-[2/3] overflow-hidden rounded-lg bg-gray-800"
-        onClick={handleClick}
-      >
-        {/* <img
-          src={movie.imageUrl || movie.image_src || "/api/placeholder/220/330"}
-          alt={movie.title}
-          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-200"
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.src = "/placeholder.png";
-          }}
-        /> */}
+      <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-gray-800">
         <Image
           src={movie.imageUrl || movie.image_src || "/api/placeholder/220/330"}
           alt={movie.title}
@@ -95,11 +169,40 @@ const MovieCard = ({
           priority={false}
           style={{ objectFit: "cover" }}
           onError={(e) => {
-            // Next/image handles errors differently, this is the updated approach
             e.currentTarget.src = "/placeholder.png";
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          {/* Play Button on hover */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <button
+              onClick={handleClick}
+              className="bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-full p-3 transition-all duration-200 border border-white/30"
+            >
+              <Play className="h-8 w-8 text-white fill-white" />
+            </button>
+
+            {/* TV Show Icon */}
+            {isTvShow && (
+              <div className="mt-4 bg-cyan-500/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 mr-1"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                  <polyline points="17 2 12 7 7 2"></polyline>
+                </svg>
+                View Episodes
+              </div>
+            )}
+          </div>
+
           <div className="absolute bottom-0 left-0 right-0 p-4">
             <div className="text-white text-sm font-medium">
               {movie.year}
@@ -188,6 +291,45 @@ const MovieCardSkeleton = () => {
 //   );
 // };
 
+// const MovieSection = ({
+//   title,
+//   movies,
+//   isLoading,
+//   category,
+//   onMovieClick,
+// }: MovieSectionProps) => {
+//   const router = useRouter();
+
+//   const handleViewAll = () => {
+//     router.push(`/category/${category}`);
+//   };
+
+//   return (
+//     <section className="mb-12">
+//       <div className="flex items-center justify-between mb-4">
+//         <h2 className="text-xl font-bold text-white">{title}</h2>
+//         <button
+//           onClick={handleViewAll}
+//           className="text-cyan-400 hover:text-cyan-300 text-sm"
+//         >
+//           View All
+//         </button>
+//       </div>
+//       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+//         {isLoading
+//           ? [...Array(10)].map((_, index) => <MovieCardSkeleton key={index} />)
+//           : movies.slice(0, 10).map((movie) => (
+//               <MovieCard
+//                 key={movie.id}
+//                 movie={movie}
+//                 onClick={onMovieClick} // This will be undefined when null is passed
+//               />
+//             ))}
+//       </div>
+//     </section>
+//   );
+// };
+
 const MovieSection = ({
   title,
   movies,
@@ -200,6 +342,9 @@ const MovieSection = ({
   const handleViewAll = () => {
     router.push(`/category/${category}`);
   };
+
+  // Check if this is the TV shows section
+  const isTvShowSection = category === "tv-series";
 
   return (
     <section className="mb-12">
@@ -215,13 +360,16 @@ const MovieSection = ({
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {isLoading
           ? [...Array(10)].map((_, index) => <MovieCardSkeleton key={index} />)
-          : movies.slice(0, 10).map((movie) => (
-              <MovieCard
-                key={movie.id}
-                movie={movie}
-                onClick={onMovieClick} // This will be undefined when null is passed
-              />
-            ))}
+          : movies
+              .slice(0, 10)
+              .map((movie) => (
+                <MovieCard
+                  key={movie.id}
+                  movie={movie}
+                  onClick={onMovieClick}
+                  isTvShow={isTvShowSection}
+                />
+              ))}
       </div>
     </section>
   );
@@ -525,7 +673,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 pt-20 pb-16">
         {/* Featured Section */}
-        {isLoading ? (
+        {/* {isLoading ? (
           <FeaturedMovieSkeleton />
         ) : (
           featuredMovie && (
@@ -589,6 +737,140 @@ export default function Home() {
                     className="bg-cyan-400 text-black px-6 py-3 rounded-md hover:bg-cyan-500 transition-colors"
                     onClick={() => handleClick(featuredMovie)}
                   >
+                    Watch Now
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        )} */}
+
+        {isLoading ? (
+          <FeaturedMovieSkeleton />
+        ) : (
+          featuredMovie && (
+            <div className="relative h-[60vh] md:h-[70vh] mb-6 md:mb-12 rounded-lg overflow-hidden">
+              <div className="absolute inset-0 flex justify-center items-center overflow-hidden">
+                <Image
+                  src={
+                    featuredMovie.imageUrl ||
+                    featuredMovie.image_src ||
+                    "/api/placeholder/1200/600"
+                  }
+                  alt={featuredMovie.title}
+                  className="w-auto h-full object-cover scale-110 blur-sm opacity-40"
+                  fill
+                  sizes="100vw"
+                  priority={false}
+                  style={{ objectFit: "cover" }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-black" />
+              </div>
+              <div className="relative h-full flex flex-col justify-center px-4 md:px-8 max-w-7xl mx-auto">
+                {/* Desktop Layout */}
+                <div className="hidden md:flex items-center">
+                  <div className="mr-8">
+                    <div className="overflow-hidden rounded-lg shadow-2xl h-[500px] w-[350px]">
+                      <img
+                        src={
+                          featuredMovie.imageUrl ||
+                          featuredMovie.image_src ||
+                          "/api/placeholder/350/500"
+                        }
+                        alt={featuredMovie.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.jpg";
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h1 className="text-4xl font-bold text-white mb-2">
+                      {featuredMovie.title}
+                    </h1>
+                    <div className="flex items-center space-x-4 text-gray-300 mb-4">
+                      <span className="flex items-center">
+                        <Star className="w-5 h-5 text-yellow-500 mr-1" />
+                        {featuredMovie.rating || featuredMovie.imdb_rating}
+                      </span>
+                      {featuredMovie.duration && (
+                        <span>{featuredMovie.duration}</span>
+                      )}
+                      {featuredMovie.year && <span>{featuredMovie.year}</span>}
+                      {featuredMovie.quality && (
+                        <span className="bg-cyan-900 text-white px-2 py-1 rounded text-sm">
+                          {featuredMovie.quality}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-300 max-w-2xl mb-6">
+                      {featuredMovie.description || "No description available"}
+                    </p>
+                    <button
+                      className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium px-6 py-3 rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg flex items-center justify-center"
+                      onClick={() => handleClick(featuredMovie)}
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Watch Now
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mobile Layout */}
+                <div className="md:hidden">
+                  {/* Content row with details and banner */}
+                  <div className="flex mb-4">
+                    {/* Movie details */}
+                    <div className="flex-1 pr-3">
+                      <h1 className="text-2xl font-bold text-white mb-2">
+                        {featuredMovie.title}
+                      </h1>
+                      <div className="flex flex-wrap items-center gap-2 text-gray-300 mb-2">
+                        <span className="flex items-center">
+                          <Star className="w-4 h-4 text-yellow-500 mr-1" />
+                          {featuredMovie.rating || featuredMovie.imdb_rating}
+                        </span>
+                        {featuredMovie.year && (
+                          <span>{featuredMovie.year}</span>
+                        )}
+                        {featuredMovie.quality && (
+                          <span className="bg-cyan-900 text-white px-2 py-1 rounded text-xs">
+                            {featuredMovie.quality}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-gray-300 line-clamp-4 text-sm">
+                        {featuredMovie.description ||
+                          "No description available"}
+                      </p>
+                    </div>
+
+                    {/* Mobile banner */}
+                    <div className="flex-shrink-0">
+                      <div className="overflow-hidden rounded-lg shadow-lg h-[140px] w-[100px]">
+                        <img
+                          src={
+                            featuredMovie.imageUrl ||
+                            featuredMovie.image_src ||
+                            "/api/placeholder/100/140"
+                          }
+                          alt={featuredMovie.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.jpg";
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Watch button below both elements */}
+                  <button
+                    className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium px-4 py-2 rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg w-full flex items-center justify-center"
+                    onClick={() => handleClick(featuredMovie)}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
                     Watch Now
                   </button>
                 </div>
