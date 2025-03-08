@@ -90,12 +90,12 @@ class MyDocument extends Document {
           <script
             dangerouslySetInnerHTML={{
               __html: `
-      (function(s, u, z, p) {
-        s.src = u;
-        s.setAttribute('data-zone', z);
-        p.appendChild(s);
-      })(document.createElement('script'), 'https://shebudriftaiter.net/tag.min.js', 8916200, document.body || document.documentElement);
-    `,
+                (function(s, u, z, p) {
+                  s.src = u;
+                  s.setAttribute('data-zone', z);
+                  p.appendChild(s);
+                })(document.createElement('script'), 'https://shebudriftaiter.net/tag.min.js', 8916200, document.body || document.documentElement);
+              `,
             }}
           />
         </Head>
