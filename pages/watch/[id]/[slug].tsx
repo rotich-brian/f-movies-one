@@ -1,17 +1,62 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
-import {
-  Menu,
-  Search,
-  X,
-  Star,
-  Download,
-  Share2,
-  Play,
-  ChevronDown,
-} from "lucide-react";
+import { Menu, Search, X, Star, Share2, Play } from "lucide-react";
 import Link from "next/link";
+
+interface TMDBMovieDetails {
+  id: number;
+  title: string;
+  overview: string;
+  release_date: string;
+  poster_path: string;
+  backdrop_path: string;
+  runtime: number;
+  vote_average: number;
+  vote_count: number;
+  genres: { id: number; name: string }[];
+  imdb_id: string;
+  status: string;
+  tagline: string;
+  budget: number;
+  revenue: number;
+  homepage: string;
+  production_companies: { id: number; name: string; logo_path: string }[];
+  credits?: {
+    cast: {
+      id: number;
+      name: string;
+      character: string;
+      profile_path: string;
+    }[];
+    crew: {
+      id: number;
+      name: string;
+      job: string;
+      department: string;
+    }[];
+  };
+  videos?: {
+    results: {
+      id: string;
+      key: string;
+      name: string;
+      site: string;
+      type: string;
+    }[];
+  };
+}
+
+interface TMDBMovieSearchResult {
+  id: number;
+  title: string;
+  poster_path: string;
+  release_date: string;
+  vote_average: number;
+  vote_count: number;
+  overview: string;
+  genre_ids: number[];
+}
 
 interface MovieDetails {
   title: string;
@@ -22,7 +67,7 @@ interface MovieDetails {
   image_src?: string;
   urls?: string[];
   plot?: string;
-  description?: string; // Keep for backward compatibility
+  description?: string;
   actors?: string[];
   director?: string;
   downloads?: string;
@@ -32,13 +77,12 @@ interface MovieDetails {
   release_date?: string;
   runtime?: string;
   trailer?: string;
-  imdb_id?: string; // Add IMDB ID
-}
-
-interface ServerLink {
-  url: string;
-  quality: "SD" | "HD";
-  serverNumber: number;
+  imdb_id?: string;
+  tmdb_id?: number;
+  backdrop_path?: string;
+  videos?: { key: string; name: string; type: string }[];
+  directors?: string[];
+  cast?: { name: string; character: string }[];
 }
 
 interface MovieCardProps {
@@ -52,10 +96,11 @@ interface MovieCardProps {
     quality: string;
     year?: string;
     link?: string;
-    // Add the missing properties
+    tmdb_id?: number;
     imdb_rating?: string;
     imdb_votes?: string;
     image_src?: string;
+    poster_path?: string;
   };
 }
 
@@ -243,34 +288,28 @@ const Navigation = ({
 // Main WatchPage Component
 export default function WatchPage() {
   const router = useRouter();
-  const { title, year, link } = router.query;
+  const { slug } = router.query;
+
+  const tmdb_id =
+    router.query.tmdb_id ||
+    (router.asPath.startsWith("/watch/") && router.asPath.split("/")[2]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [activeServer, setActiveServer] = useState<number>(1);
-  const [serverLinks, setServerLinks] = useState<ServerLink[]>([]);
-  const [currentVideoUrl, setCurrentVideoUrl] = useState<string>("");
   const [movieDetails, setMovieDetails] = useState<MovieDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isSDDropdownOpen, setIsSDDropdownOpen] = useState(false);
-  const [isHDDropdownOpen, setIsHDDropdownOpen] = useState(false);
-  const [videoError, setVideoError] = useState(false);
-  // const [relatedMovies, setRelatedMovies] = useState<any[]>([]);
   const [relatedMovies, setRelatedMovies] = useState<MovieCardProps["movie"][]>(
     []
   );
-
-  const [useIframe, setUseIframe] = useState<boolean>(true);
   const [iframeError, setIframeError] = useState<boolean>(false);
-  const [showDirectPlayer, setShowDirectPlayer] = useState<boolean>(false);
 
-  const extractImdbId = (url?: string): string | null => {
-    if (!url) return null;
-    const match = url.match(/tt\d+/);
-    return match ? match[0] : null;
-  };
+  useEffect(() => {
+    console.log("Router path:", router.asPath);
+    console.log("Extracted TMDB ID:", tmdb_id);
+    console.log("Slug:", slug);
+  }, [router, tmdb_id, slug]);
 
   // Handle search
   const handleSearch = (e: React.FormEvent) => {
@@ -286,222 +325,271 @@ export default function WatchPage() {
     }
   };
 
+  // Handle iframe errors
+  const handleIframeError = () => {
+    console.log("Iframe error occurred");
+    setIframeError(true);
+  };
+
+  // Fetch movie details from TMDB API
   useEffect(() => {
     const fetchMovieDetails = async () => {
-      if (!link) return;
+      if (!tmdb_id) return;
 
       try {
+        console.log(`Fetching movie details for TMDB ID: ${tmdb_id}`);
         setIsLoading(true);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/getLinks`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              link,
-              title,
-              year,
-              quality: "HD",
-              image_src: "placeholder.png",
-              imdb_rating: "8.2",
-              imdb_votes: "15,000 votes",
-            }),
-          }
-        );
+        setError("");
+
+        // Fetch detailed movie information including videos and credits
+        const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+        if (!API_KEY) {
+          throw new Error("API key not found");
+        }
+
+        const apiUrl = `https://api.themoviedb.org/3/movie/${tmdb_id}?append_to_response=videos,credits&api_key=${API_KEY}`;
+        console.log(`Making API request to: ${apiUrl}`);
+
+        const response = await fetch(apiUrl);
 
         if (!response.ok) {
-          throw new Error("Failed to fetch movie details");
+          throw new Error(`Failed to fetch movie details: ${response.status}`);
         }
 
-        const data = await response.json();
+        const tmdbData: TMDBMovieDetails = await response.json();
+        console.log("Movie data fetched successfully:", tmdbData.title);
 
-        // Extract IMDB ID from imdb_url if available
-        if (data.imdb_url && !data.imdb_id) {
-          data.imdb_id = extractImdbId(data.imdb_url);
-        }
+        // Format directors
+        const directors =
+          tmdbData.credits?.crew
+            .filter((person) => person.job === "Director")
+            .map((director) => director.name) || [];
 
-        setMovieDetails(data);
+        // Format cast
+        const cast =
+          tmdbData.credits?.cast.slice(0, 10).map((actor) => ({
+            name: actor.name,
+            character: actor.character,
+          })) || [];
 
-        // If no IMDB ID is available, fallback to direct player
-        if (!data.imdb_id) {
-          setUseIframe(false);
-        }
+        // Format videos (trailers)
+        const videos =
+          tmdbData.videos?.results
+            .filter(
+              (video) =>
+                video.site === "YouTube" &&
+                (video.type === "Trailer" || video.type === "Teaser")
+            )
+            .map((video) => ({
+              key: video.key,
+              name: video.name,
+              type: video.type,
+            })) || [];
+
+        // Convert TMDB data to our MovieDetails format
+        const movieData: MovieDetails = {
+          title: tmdbData.title,
+          year: tmdbData.release_date
+            ? new Date(tmdbData.release_date).getFullYear().toString()
+            : "",
+          quality: "HD",
+          imdb_rating: (tmdbData.vote_average / 2).toFixed(1),
+          imdb_votes: `${tmdbData.vote_count.toLocaleString()} votes`,
+          image_src: tmdbData.poster_path
+            ? `https://image.tmdb.org/t/p/w500${tmdbData.poster_path}`
+            : "/placeholder.png",
+          backdrop_path: tmdbData.backdrop_path
+            ? `https://image.tmdb.org/t/p/original${tmdbData.backdrop_path}`
+            : undefined,
+          plot: tmdbData.overview,
+          genres: tmdbData.genres.map((genre) => genre.name),
+          imdb_id: tmdbData.imdb_id,
+          imdb_url: tmdbData.imdb_id
+            ? `https://www.imdb.com/title/${tmdbData.imdb_id}`
+            : undefined,
+          runtime: tmdbData.runtime ? `${tmdbData.runtime} min` : undefined,
+          release_date: tmdbData.release_date,
+          trailer:
+            videos.length > 0
+              ? `https://www.youtube.com/watch?v=${videos[0].key}`
+              : undefined,
+          videos: videos,
+          directors: directors,
+          cast: cast,
+          tmdb_id: tmdbData.id,
+        };
+
+        console.log("Processed movie data:", movieData.title);
+        setMovieDetails(movieData);
       } catch (err) {
+        console.error("Error fetching movie details:", err);
         setError(err instanceof Error ? err.message : "An error occurred");
-        setUseIframe(false);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchMovieDetails();
-  }, [link, title, year]);
+    if (tmdb_id) {
+      fetchMovieDetails();
+    } else {
+      console.log("No TMDB ID provided");
+    }
+  }, [tmdb_id]);
 
-  // Add function to handle iframe errors
-  const handleIframeError = () => {
-    setIframeError(true);
-    setUseIframe(false);
-  };
-
-  const handlePlayButtonClick = () => {
-    setShowDirectPlayer(true);
-  };
-
-  // Process URLs into server links
+  // Fetch related movies
   useEffect(() => {
-    if (movieDetails?.urls) {
-      // Separate mp4 and mkv files
-      const standardLinks = movieDetails.urls.filter((url) =>
-        url.includes(".mp4")
-      );
-      const hdLinks = movieDetails.urls.filter((url) => url.includes(".mkv"));
+    const fetchRelatedMovies = async () => {
+      if (!tmdb_id) return;
 
-      const processedLinks: ServerLink[] = [
-        ...standardLinks.map((url, index) => ({
-          url,
-          quality: "SD" as "SD" | "HD", // Add type assertion
-          serverNumber: index + 1,
-        })),
-        ...hdLinks.map((url, index) => ({
-          url,
-          quality: "HD" as "SD" | "HD", // Add type assertion
-          serverNumber: standardLinks.length + index + 1,
-        })),
-      ];
+      try {
+        console.log(`Fetching related movies for TMDB ID: ${tmdb_id}`);
 
-      setServerLinks(processedLinks);
+        const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+        if (!API_KEY) {
+          throw new Error("API key not found");
+        }
 
-      if (processedLinks.length > 0) {
-        setCurrentVideoUrl(processedLinks[0].url);
-        setActiveServer(1);
-      }
-    }
-  }, [movieDetails?.urls]);
+        // Fetch recommendations from TMDB
+        const recommendationsUrl = `https://api.themoviedb.org/3/movie/${tmdb_id}/recommendations?language=en-US&page=1&api_key=${API_KEY}`;
+        console.log(`Making API request to: ${recommendationsUrl}`);
 
-  useEffect(() => {
-    if (videoError && serverLinks.length > 1) {
-      // Find next server
-      const nextServerIndex = (activeServer % serverLinks.length) + 1;
-      handleServerChange(nextServerIndex);
-    }
-  }, [videoError]);
+        const response = await fetch(recommendationsUrl);
 
-  useEffect(() => {
-    if (movieDetails) {
-      console.log("Movie details image_src:", movieDetails.image_src);
-    }
-  }, [movieDetails]);
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch recommendations: ${response.status}`
+          );
+        }
 
-  // Handle server change
-  const handleServerChange = (serverNumber: number) => {
-    const serverLink = serverLinks.find(
-      (link) => link.serverNumber === serverNumber
-    );
-    if (serverLink) {
-      setCurrentVideoUrl(serverLink.url);
-      setActiveServer(serverNumber);
-      setVideoError(false); // Reset error state when changing servers
-    }
-  };
-
-  // Handle HD stream
-  const handleStreamHD = () => {
-    if (movieDetails?.trailer) {
-      window.open(movieDetails.trailer, "_blank");
-    }
-  };
-
-  // Handle downloads
-  const handleGroupedDownload = (url: string, quality: "SD" | "HD") => {
-    try {
-      if (!url) throw new Error("Invalid download URL");
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = url.split("/").pop() || "download"; // Use the file name from the URL
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-
-      if (quality === "SD") {
-        setIsSDDropdownOpen(false);
-      } else {
-        setIsHDDropdownOpen(false);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Download failed");
-    }
-  };
-
-  // Handle video error
-  const handleVideoError = () => {
-    setVideoError(true);
-    console.error("Video playback error for URL:", currentVideoUrl);
-  };
-
-  const fetchRelatedMovies = async () => {
-    try {
-      if (movieDetails?.genres && movieDetails.genres.length > 0) {
-        const genre = movieDetails.genres[0];
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/search?genre=${encodeURIComponent(
-            genre
-          )}&limit=12`
+        const data = await response.json();
+        console.log(
+          `Recommendations fetched. Total results: ${
+            data.results ? data.results.length : 0
+          }`
         );
 
-        if (response.ok) {
-          const data = await response.json();
-          // Filter out the current movie
-          const filteredMovies = data.filter(
-            (movie: MovieCardProps["movie"]) =>
-              movie.title !== movieDetails.title
+        if (data.results && data.results.length > 0) {
+          const formattedMovies = data.results
+            .slice(0, 15)
+            .map((movie: TMDBMovieSearchResult) => ({
+              id: movie.id,
+              tmdb_id: movie.id,
+              title: movie.title,
+              rating: (movie.vote_average / 2).toFixed(1),
+              duration: "",
+              genres: [],
+              quality: "HD",
+              imageUrl: movie.poster_path
+                ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                : "/placeholder.png",
+              image_src: movie.poster_path
+                ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                : "/placeholder.png",
+              poster_path: movie.poster_path,
+              year: movie.release_date
+                ? new Date(movie.release_date).getFullYear().toString()
+                : "",
+              imdb_rating: (movie.vote_average / 2).toFixed(1),
+              imdb_votes: `${movie.vote_count} votes`,
+              link: `/watch/${movie.id}/${movie.title
+                .toLowerCase()
+                .replace(/[^\w\s-]/g, "")
+                .replace(/\s+/g, "-")}`,
+            }));
+
+          console.log(`Processed ${formattedMovies.length} recommendations`);
+          setRelatedMovies(formattedMovies);
+          return;
+        }
+
+        if (!data.results || data.results.length === 0) {
+          console.log(
+            "No recommendations found, fetching similar movies instead"
           );
 
-          if (filteredMovies.length > 0) {
-            setRelatedMovies(filteredMovies.slice(0, 15));
-            return;
+          const similarUrl = `https://api.themoviedb.org/3/movie/${tmdb_id}/similar?language=en-US&page=1&api_key=${API_KEY}`;
+          console.log(`Making API request to: ${similarUrl}`);
+
+          const similarResponse = await fetch(similarUrl);
+
+          if (!similarResponse.ok) {
+            throw new Error(
+              `Failed to fetch similar movies: ${similarResponse.status}`
+            );
+          }
+
+          const similarData = await similarResponse.json();
+          console.log(
+            `Similar movies fetched. Total results: ${
+              similarData.results ? similarData.results.length : 0
+            }`
+          );
+
+          if (similarData.results && similarData.results.length > 0) {
+            const formattedMovies = similarData.results
+              .slice(0, 15)
+              .map((movie: TMDBMovieSearchResult) => ({
+                id: movie.id,
+                tmdb_id: movie.id,
+                title: movie.title,
+                rating: (movie.vote_average / 2).toFixed(1),
+                duration: "",
+                genres: [],
+                quality: "HD",
+                imageUrl: movie.poster_path
+                  ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                  : "/placeholder.png",
+                image_src: movie.poster_path
+                  ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                  : "/placeholder.png",
+                poster_path: movie.poster_path,
+                year: movie.release_date
+                  ? new Date(movie.release_date).getFullYear().toString()
+                  : "",
+                imdb_rating: (movie.vote_average / 2).toFixed(1),
+                imdb_votes: `${movie.vote_count} votes`,
+                link: `/watch/${movie.id}/${movie.title
+                  .toLowerCase()
+                  .replace(/[^\w\s-]/g, "")
+                  .replace(/\s+/g, "-")}`,
+              }));
+
+            console.log(`Processed ${formattedMovies.length} similar movies`);
+            setRelatedMovies(formattedMovies);
+          } else {
+            console.log("No similar movies found either");
           }
         }
+      } catch (error) {
+        console.error("Error fetching related movies:", error);
       }
+    };
 
-      // Fall back to top_movies if genre fetch failed or returned no results
-      const topMoviesResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/latest_movies`
-      );
-
-      if (!topMoviesResponse.ok) throw new Error("Failed to fetch top movies");
-
-      const topMoviesData = await topMoviesResponse.json();
-
-      // Map the data structure to match what the MovieCard expects
-      const formattedMovies = topMoviesData.results
-        .filter(
-          (movie: MovieCardProps["movie"]) =>
-            movie.title !== movieDetails?.title
-        )
-        .slice(0, 15);
-
-      setRelatedMovies(formattedMovies);
-    } catch (error) {
-      console.error("Error fetching related movies:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (movieDetails) {
+    if (tmdb_id) {
       fetchRelatedMovies();
     }
-  }, [movieDetails]);
+  }, [tmdb_id]);
+
+  // Log component state changes
+  useEffect(() => {
+    console.log("WatchPage component state:", {
+      isLoading,
+      hasMovieDetails: !!movieDetails,
+      relatedMoviesCount: relatedMovies.length,
+      hasError: !!error,
+      iframeError,
+    });
+  }, [isLoading, movieDetails, relatedMovies, error, iframeError]);
 
   return (
     <div className="min-h-screen bg-[#1a1d24]">
       <Head>
-        <title>{`${title || "Watch Movie"} - FMovies`}</title>
+        <title>{`${movieDetails?.title || "Watch Movie"} - FMovies`}</title>
         <meta
           name="description"
-          content={`Watch ${title} ${year ? `(${year})` : ""} in HD quality`}
+          content={`Watch ${movieDetails?.title} ${
+            movieDetails?.year ? `(${movieDetails.year})` : ""
+          } in HD quality`}
         />
       </Head>
 
@@ -522,11 +610,13 @@ export default function WatchPage() {
             Home
           </Link>
           <span className="text-gray-500">/</span>
-          <Link href="/home" className="text-cyan-400 hover:text-cyan-300">
+          <Link href="/movies" className="text-cyan-400 hover:text-cyan-300">
             Movies
           </Link>
           <span className="text-gray-500">/</span>
-          <span className="text-gray-300">{title || "Loading..."}</span>
+          <span className="text-gray-300">
+            {movieDetails?.title || "Loading..."}
+          </span>
         </div>
 
         {error && (
@@ -535,7 +625,7 @@ export default function WatchPage() {
           </div>
         )}
 
-        {/* Video Player Section */}
+        {/* Video Player Section - Improved iframe player */}
         <div className="relative w-full mb-8">
           {isLoading ? (
             <div className="w-full aspect-video bg-gray-900 rounded-lg">
@@ -546,135 +636,66 @@ export default function WatchPage() {
                 </div>
               </div>
             </div>
-          ) : useIframe && movieDetails?.imdb_id && !iframeError ? (
-            <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
+          ) : !movieDetails ? (
+            <div className="w-full aspect-video bg-gray-900 rounded-lg flex items-center justify-center">
+              <div className="text-white text-center p-4">
+                <h3 className="text-xl mb-2">Unable to load movie</h3>
+                <p className="text-gray-400">
+                  {error || "Please check the movie ID or try again later"}
+                </p>
+              </div>
+            </div>
+          ) : movieDetails?.imdb_id && !iframeError ? (
+            <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-xl">
               <iframe
                 src={`https://vidsrc.me/embed/movie?imdb=${movieDetails.imdb_id}`}
                 style={{ width: "100%", height: "100%" }}
+                className="w-full h-full"
                 frameBorder="0"
                 referrerPolicy="origin"
                 allowFullScreen
                 onError={handleIframeError}
               />
             </div>
-          ) : showDirectPlayer && currentVideoUrl && !videoError ? (
-            <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
-              <video
-                className="w-full h-full"
-                controls
-                autoPlay
-                src={currentVideoUrl}
-                poster={movieDetails?.image_src || "/placeholder.png"}
-                onError={handleVideoError}
-              >
-                Your browser does not support the video tag.
-              </video>
-            </div>
           ) : (
             <div
               className="w-full aspect-video bg-gray-900 rounded-lg relative cursor-pointer"
-              onClick={handlePlayButtonClick}
               style={{
                 backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url(${
-                  movieDetails?.image_src || "/placeholder.png"
+                  movieDetails?.backdrop_path ||
+                  movieDetails?.image_src ||
+                  "/placeholder.png"
                 })`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }}
             >
               <div className="absolute inset-0 flex items-center justify-center flex-col">
-                {videoError || iframeError ? (
-                  <>
-                    <div className="text-red-500 mb-4">
-                      Video playback error. Please try another server.
-                    </div>
-                    <div className="bg-cyan-400 rounded-full p-4 cursor-pointer hover:bg-cyan-500 transition-colors">
-                      <Play className="w-12 h-12 text-white" />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-white text-xl mb-4 font-bold">
-                      {movieDetails?.title}
-                    </div>
-                    <div className="bg-cyan-400 rounded-full p-4 cursor-pointer hover:bg-cyan-500 transition-colors">
-                      <Play className="w-12 h-12 text-white" />
-                    </div>
-                    <div className="text-white text-sm mt-4">
-                      {useIframe ? "Play with VidSrc" : "Play"}
-                    </div>
-                  </>
-                )}
+                <div className="text-white text-xl mb-4 font-bold">
+                  {movieDetails?.title}
+                </div>
+                <a
+                  href={movieDetails?.trailer}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-cyan-400 rounded-full p-4 cursor-pointer hover:bg-cyan-500 transition-colors"
+                >
+                  <Play className="w-12 h-12 text-white" />
+                </a>
+                <div className="text-white text-sm mt-4">Watch Trailer</div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Server Selection - Only show when direct player is active */}
-        {(!useIframe || iframeError) && showDirectPlayer && (
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
-            <div className="flex flex-wrap gap-2">
-              {isLoading ? (
-                <div className="flex gap-2">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="animate-pulse h-10 w-24 bg-gray-700 rounded-md"
-                    ></div>
-                  ))}
-                </div>
-              ) : (
-                serverLinks.map((link) => (
-                  <button
-                    key={link.serverNumber}
-                    onClick={() => handleServerChange(link.serverNumber)}
-                    className={`px-6 py-2 rounded-md transition-colors ${
-                      activeServer === link.serverNumber
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-100 bg-opacity-10 text-gray-300 hover:bg-opacity-20"
-                    }`}
-                  >
-                    Server {link.serverNumber}
-                  </button>
-                ))
-              )}
-            </div>
-
-            {isLoading ? (
-              <div className="animate-pulse h-10 w-32 bg-gray-700 rounded-md"></div>
-            ) : (
-              <button
-                onClick={
-                  movieDetails?.trailer
-                    ? handleStreamHD
-                    : () => {
-                        const hdLink = serverLinks.find(
-                          (link) => link.quality === "HD"
-                        );
-                        if (hdLink) setCurrentVideoUrl(hdLink.url);
-                      }
-                }
-                className="px-6 py-2 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-md hover:from-red-600 hover:to-rose-700 transition-all shadow-lg transform hover:scale-105 flex items-center justify-center"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                {movieDetails?.trailer ? "Watch Trailer" : "Stream HD"}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Toggle button to switch between iframe and direct player */}
-        {!isLoading && movieDetails?.imdb_id && (
+        {/* Toggle button to retry iframe if it fails */}
+        {!isLoading && movieDetails?.imdb_id && iframeError && (
           <div className="flex justify-center mb-4">
             <button
-              onClick={() => {
-                setUseIframe(!useIframe);
-                setIframeError(false);
-                setShowDirectPlayer(false);
-              }}
+              onClick={() => setIframeError(false)}
               className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors"
             >
-              {useIframe ? "Switch Player" : "Switch Player"}
+              Retry Player
             </button>
           </div>
         )}
@@ -697,7 +718,7 @@ export default function WatchPage() {
               <>
                 <h1 className="text-xl font-bold text-white p-4">
                   {movieDetails?.title}{" "}
-                  {movieDetails?.year ? `${movieDetails.year}` : ""}
+                  {movieDetails?.year ? `(${movieDetails.year})` : ""}
                 </h1>
 
                 <div className="relative aspect-[2/3] mb-4 hidden md:block">
@@ -708,13 +729,16 @@ export default function WatchPage() {
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = "/placeholder.png";
+                      console.log(
+                        "Movie poster image failed to load, using placeholder"
+                      );
                     }}
                   />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 text-gray-300 mb-4">
                   <span className="bg-cyan-400 text-white px-2 py-1 rounded text-sm">
-                    {movieDetails?.quality?.replace(/[\(\)]/g, "")}
+                    {movieDetails?.quality}
                   </span>
                   {movieDetails?.runtime && (
                     <>
@@ -782,15 +806,6 @@ export default function WatchPage() {
                       {movieDetails.imdb_votes}
                     </span>
                   )}
-                  {movieDetails?.downloads && (
-                    <div className="flex items-center">
-                      <Download className="w-4 h-4 text-cyan-400 mr-1" />
-                      <span className="text-gray-300 text-sm">
-                        {parseInt(movieDetails.downloads).toLocaleString()}{" "}
-                        downloads
-                      </span>
-                    </div>
-                  )}
                   {movieDetails?.imdb_url && (
                     <a
                       href={movieDetails.imdb_url}
@@ -806,24 +821,27 @@ export default function WatchPage() {
                 <div className="mb-6">
                   <h4 className="text-gray-200 font-medium mb-2">Synopsis</h4>
                   <p className="text-gray-300">
-                    {movieDetails?.plot ||
-                      movieDetails?.description ||
-                      "No plot available"}
+                    {movieDetails?.plot || "No plot available"}
                   </p>
                 </div>
 
-                {movieDetails?.director && (
-                  <div className="mb-3">
-                    <h4 className="text-gray-200 font-medium mb-1">Director</h4>
-                    <p className="text-gray-300">{movieDetails.director}</p>
-                  </div>
-                )}
+                {movieDetails?.directors &&
+                  movieDetails.directors.length > 0 && (
+                    <div className="mb-3">
+                      <h4 className="text-gray-200 font-medium mb-1">
+                        Director{movieDetails.directors.length > 1 ? "s" : ""}
+                      </h4>
+                      <p className="text-gray-300">
+                        {movieDetails.directors.join(", ")}
+                      </p>
+                    </div>
+                  )}
 
-                {movieDetails?.actors && movieDetails.actors.length > 0 && (
+                {movieDetails?.cast && movieDetails.cast.length > 0 && (
                   <div>
                     <h4 className="text-gray-200 font-medium mb-1">Cast</h4>
                     <p className="text-gray-300">
-                      {movieDetails.actors.join(", ")}
+                      {movieDetails.cast.map((actor) => actor.name).join(", ")}
                     </p>
                   </div>
                 )}
@@ -831,7 +849,7 @@ export default function WatchPage() {
             )}
           </div>
 
-          {/* Trailer and Download Options */}
+          {/* Trailer and Information */}
           <div className="bg-gray-800 rounded-lg p-6">
             {isLoading ? (
               <>
@@ -848,10 +866,10 @@ export default function WatchPage() {
                   Trailer
                 </h3>
 
-                {movieDetails?.trailer ? (
+                {movieDetails?.videos && movieDetails.videos.length > 0 ? (
                   <div className="aspect-video mb-6">
                     <iframe
-                      src={movieDetails.trailer}
+                      src={`https://www.youtube.com/embed/${movieDetails.videos[0].key}`}
                       className="w-full h-full rounded-lg"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
@@ -863,97 +881,28 @@ export default function WatchPage() {
                   </div>
                 )}
 
-                <h3 className="text-white font-semibold mb-4">
-                  Download Options
-                </h3>
+                {/* Watch Options */}
+                <h3 className="text-white font-semibold mb-4">Watch Options</h3>
 
-                {/* SD Downloads (mp4 files) */}
-                <div className="mb-4">
-                  <button
-                    onClick={() => setIsSDDropdownOpen(!isSDDropdownOpen)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-gray-700 rounded-lg text-white hover:bg-gray-600"
+                {movieDetails?.imdb_id ? (
+                  <a
+                    href="#top"
+                    onClick={() => {
+                      if (iframeError) {
+                        setIframeError(false);
+                      }
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className="w-full flex items-center justify-center px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-4"
                   >
-                    <div className="flex items-center">
-                      <span>Download SD (mp4)</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-sm text-gray-400 mr-2">
-                        {
-                          serverLinks.filter((link) => link.quality === "SD")
-                            .length
-                        }{" "}
-                        links
-                      </span>
-                      <ChevronDown
-                        className={`w-5 h-5 transition-transform ${
-                          isSDDropdownOpen ? "rotate-180" : ""
-                        }`}
-                      />
-                    </div>
-                  </button>
-                  {isSDDropdownOpen && (
-                    <div className="mt-2 space-y-2">
-                      {serverLinks
-                        .filter((link) => link.quality === "SD")
-                        .map((link, index) => (
-                          <button
-                            key={index}
-                            onClick={() =>
-                              handleGroupedDownload(link.url, "SD")
-                            }
-                            className="w-full flex items-center px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                          >
-                            <Download className="w-5 h-5 mr-2" />
-                            <span>SD Link {index + 1}</span>
-                          </button>
-                        ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* HD Downloads (mkv files) */}
-                <div>
-                  <button
-                    onClick={() => setIsHDDropdownOpen(!isHDDropdownOpen)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-gray-700 rounded-lg text-white hover:bg-gray-600"
-                  >
-                    <div className="flex items-center">
-                      <span>Download HD (mkv)</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-sm text-gray-400 mr-2">
-                        {
-                          serverLinks.filter((link) => link.quality === "HD")
-                            .length
-                        }{" "}
-                        links
-                      </span>
-                      <ChevronDown
-                        className={`w-5 h-5 transition-transform ${
-                          isHDDropdownOpen ? "rotate-180" : ""
-                        }`}
-                      />
-                    </div>
-                  </button>
-                  {isHDDropdownOpen && (
-                    <div className="mt-2 space-y-2">
-                      {serverLinks
-                        .filter((link) => link.quality === "HD")
-                        .map((link, index) => (
-                          <button
-                            key={index}
-                            onClick={() =>
-                              handleGroupedDownload(link.url, "HD")
-                            }
-                            className="w-full flex items-center px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                          >
-                            <Download className="w-5 h-5 mr-2" />
-                            <span>HD Link {index + 1}</span>
-                          </button>
-                        ))}
-                    </div>
-                  )}
-                </div>
+                    <Play className="w-5 h-5 mr-2" />
+                    <span>Watch Movie Now</span>
+                  </a>
+                ) : (
+                  <div className="w-full px-4 py-3 bg-gray-700 text-gray-400 rounded-lg mb-4 text-center">
+                    No streaming source available
+                  </div>
+                )}
 
                 {/* Share Button */}
                 <button
@@ -985,27 +934,13 @@ export default function WatchPage() {
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white">
-              {movieDetails?.genres && relatedMovies.length > 0
-                ? `Related ${movieDetails.genres[0]} Movies`
-                : "Related Movies"}
+              {relatedMovies.length > 0
+                ? "Related Movies"
+                : "Recommended Movies"}
             </h2>
-            {movieDetails?.genres &&
-            movieDetails.genres.length > 0 &&
-            relatedMovies.length > 0 ? (
-              <Link
-                href={`/genre/${encodeURIComponent(movieDetails.genres[0])}`}
-                className="text-cyan-400 hover:text-cyan-300"
-              >
-                See All
-              </Link>
-            ) : (
-              <Link
-                href="/top-imdb"
-                className="text-cyan-400 hover:text-cyan-300"
-              >
-                See All
-              </Link>
-            )}
+            <Link href="/movies" className="text-cyan-400 hover:text-cyan-300">
+              See All
+            </Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {isLoading || relatedMovies.length === 0
@@ -1023,15 +958,12 @@ export default function WatchPage() {
                     <div
                       className="relative aspect-[2/3] overflow-hidden rounded-lg bg-gray-800"
                       onClick={() =>
-                        router.push({
-                          pathname: "/watch",
-                          query: {
-                            id: index,
-                            title: movie.title,
-                            year: movie.year?.replace(/[\(\)]/g, "") || "2024",
-                            link: movie.link || "",
-                          },
-                        })
+                        router.push(
+                          `/watch/${movie.tmdb_id}/${movie.title
+                            .toLowerCase()
+                            .replace(/[^\w\s-]/g, "")
+                            .replace(/\s+/g, "-")}`
+                        )
                       }
                     >
                       <img
@@ -1046,7 +978,7 @@ export default function WatchPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <div className="absolute bottom-0 left-0 right-0 p-4">
                           <div className="text-white text-sm font-medium">
-                            {movie.year?.replace(/[\(\)]/g, "") || ""}
+                            {movie.year || ""}
                             {movie.imdb_rating && (
                               <span className="ml-2 bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded">
                                 ⭐ {movie.imdb_rating}
@@ -1071,7 +1003,7 @@ export default function WatchPage() {
                         {movie.title}
                       </h3>
                       <div className="text-gray-500 text-xs">
-                        {movie.year?.replace(/[\(\)]/g, "") || ""}
+                        {movie.year || ""}
                       </div>
                     </div>
                   </div>

@@ -35,48 +35,42 @@ class MyDocument extends Document {
           />
           <meta name="robots" content="index,follow" />
           <meta name="googlebot" content="index,follow" />
-          <base href="https://fmoviesone.top/" />
+          <base href="/" />
           <link rel="canonical" href="https://fmoviesone.top/" />
           <meta property="og:url" content="https://fmoviesone.top/" />
-          <meta
-            property="og:image"
-            content="https://fmoviesone.top/img/fbimage.png"
-          />
+          <meta property="og:image" content="/img/fbimage.png" />
           <meta property="og:image:width" content="1280" />
           <meta property="og:image:height" content="720" />
           <meta property="og:site_name" content="Fmovies" />
           <meta property="og:locale" content="en_US" />
           <meta property="og:image:alt" content="Watch Movies Online" />
           <meta name="msapplication-TileColor" content="#da532c" />
-          <meta
-            name="msapplication-config"
-            content="https://fmoviesone.top/icon/browserconfig.xml"
-          />
+          <meta name="msapplication-config" content="/icon/browserconfig.xml" />
           <meta name="theme-color" content="#ffffff" />
           <link
             rel="apple-touch-icon"
             sizes="180x180"
-            href="https://fmoviesone.top/icon/apple-touch-con.png"
+            href="/icon/apple-touch-con.png"
           />
           <link
             rel="icon"
             type="image/png"
             sizes="32x32"
-            href="https://fmoviesone.top/icon/favicon-32x32.png"
+            href="/icon/favicon-32x32.png"
           />
           <link
             rel="icon"
             type="image/png"
             sizes="16x16"
-            href="https://fmoviesone.top/icon/favicon-16x16.png"
+            href="/icon/favicon-16x16.png"
           />
-          <link rel="manifest" href="https://fmoviesone.top/manifest.json" />
+          <link rel="manifest" href="/manifest.json" />
           <link
             rel="mask-icon"
-            href="https://fmoviesone.top/icon/safari-pinned-tab.svg"
+            href="/icon/safari-pinned-tab.svg"
             color="#5bbad5"
           />
-          <link rel="shortcut icon" href="https://fmoviesone.top/favicon.ico" />
+          <link rel="shortcut icon" href="/favicon.ico" />
           <link rel="dns-prefetch" href="//img.cdno.my.id" />
           <link rel="dns-prefetch" href="//mcloud.vvid30c.site" />
           <link rel="preconnect" href="https://img.cdno.my.id" crossOrigin="" />
@@ -89,7 +83,20 @@ class MyDocument extends Document {
             rel="sitemap"
             type="application/xml"
             title="Sitemap"
-            href="https://fmoviesone.top/sitemap.xml"
+            href="/sitemap.xml"
+          />
+
+          {/* Shebudriftaiter Script */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+      (function(s, u, z, p) {
+        s.src = u;
+        s.setAttribute('data-zone', z);
+        p.appendChild(s);
+      })(document.createElement('script'), 'https://shebudriftaiter.net/tag.min.js', 8916200, document.body || document.documentElement);
+    `,
+            }}
           />
         </Head>
         <body>

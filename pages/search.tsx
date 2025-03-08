@@ -12,6 +12,8 @@ interface MovieResult {
   image_src?: string;
   imdb_rating?: string;
   imdb_votes?: string;
+  tmdb_id?: string;
+  media_type?: "movie" | "tv";
 }
 
 export default function SearchResults() {
@@ -20,9 +22,11 @@ export default function SearchResults() {
   const [searchQuery, setSearchQuery] = useState((q as string) || "");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   const [searchResults, setSearchResults] = useState<MovieResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [totalResults, setTotalResults] = useState(0);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -48,14 +52,31 @@ export default function SearchResults() {
   };
 
   const handleClick = (result: MovieResult) => {
-    router.push({
-      pathname: "/watch",
-      query: {
-        title: result.title,
-        year: result.year,
-        link: result.link,
-      },
-    });
+    if (!result.tmdb_id) {
+      console.error("Missing TMDB ID for", result.title);
+      return;
+    }
+
+    const titleSlug = result.title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
+
+    router.push(`/watch/${result.tmdb_id}/${titleSlug}`);
+  };
+
+  const handleTVClick = (result: MovieResult) => {
+    if (!result.tmdb_id) {
+      console.error("Missing TMDB ID for", result.title);
+      return;
+    }
+
+    const titleSlug = result.title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
+
+    router.push(`/series/${result.tmdb_id}/${titleSlug}`);
   };
 
   useEffect(() => {
@@ -66,8 +87,9 @@ export default function SearchResults() {
       setError("");
 
       try {
+        // Use TMDB search API with pagination
         const response = await fetch(
-          `/api/search?term=${encodeURIComponent(q as string)}`
+          `/api/tmdb-search?query=${encodeURIComponent(q as string)}`
         );
         const data = await response.json();
 
@@ -76,6 +98,8 @@ export default function SearchResults() {
         }
 
         setSearchResults(data.results || []);
+        setTotalResults(data.total_results || 0);
+        // setTotalPages(data.total_pages || 0);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
       } finally {
@@ -252,13 +276,14 @@ export default function SearchResults() {
       {/* Main Content */}
       <main className="flex-grow max-w-7xl mx-auto px-4 pt-24 pb-16 w-full">
         {/* Search Results Header */}
+
         <div className="mb-8">
           <h1 className="text-2xl text-white font-bold">
             {isLoading
-              ? "SEARCHING..."
+              ? "Searching..."
               : searchResults.length > 0
-              ? `SEARCH RESULTS FOR: "${q}"`
-              : `NO RESULTS FOUND FOR: "${q}"`}
+              ? `Search results for "${q}" (found ${totalResults})`
+              : `No results found for "${q}"`}
           </h1>
         </div>
 
@@ -299,7 +324,13 @@ export default function SearchResults() {
                     {/* Play Button on hover */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <button
-                        onClick={() => handleClick(result)}
+                        onClick={() => {
+                          if (result.media_type === "movie") {
+                            handleClick(result);
+                          } else {
+                            handleTVClick(result);
+                          }
+                        }}
                         className="bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-full p-3 transition-all duration-200 border border-white/30"
                       >
                         <Play className="h-8 w-8 text-white fill-white" />
@@ -315,11 +346,19 @@ export default function SearchResults() {
                           </span>
                         )}
                       </div>
+
                       {result.quality && (
                         <div className="text-cyan-400 text-sm mt-1">
                           {result.quality}
                         </div>
                       )}
+
+                      {result.media_type && (
+                        <div className="text-xs mt-1 inline-block px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">
+                          {result.media_type === "movie" ? "Movie" : "TV"}
+                        </div>
+                      )}
+
                       {result.imdb_votes && (
                         <div className="text-gray-400 text-xs mt-1">
                           {result.imdb_votes} votes

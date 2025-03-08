@@ -22,6 +22,35 @@ interface Movie {
   imdb_votes?: string;
 }
 
+interface TMDBMovie {
+  id: number;
+  title?: string;
+  name?: string;
+  vote_average: number;
+  release_date?: string;
+  first_air_date?: string;
+  poster_path?: string;
+  overview: string;
+  vote_count: number;
+  genres?: { id: number; name: string }[];
+}
+
+// Define an interface for the transformed movie
+interface TransformedMovie {
+  id: number;
+  title: string;
+  rating: number;
+  year: string;
+  imageUrl: string | undefined; // Change from string | null
+  image_src: string | undefined; // Change from string | null
+  description: string;
+  quality: string;
+  imdb_rating: number;
+  imdb_votes: string;
+  genres: string[];
+  link: string;
+}
+
 interface MovieSectionProps {
   title: string;
   movies: Movie[];
@@ -30,105 +59,45 @@ interface MovieSectionProps {
   onMovieClick?: (movie: Movie) => void; // Make it optional with ?
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+// Constants for TMDB API
+const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
 
-// Sample movie data expanded to 12 items
-// const sampleMovies = Array(12)
-//   .fill(null)
-//   .map((_, index) => ({
-//     id: index + 1,
-//     title: index % 2 === 0 ? "Gladiator II" : "Red One",
-//     rating: 7.1 + index * 0.1,
-//     duration: "148 min",
-//     genres: ["Action", "Adventure", "Drama"],
-//     imageUrl: "/api/placeholder/300/450",
-//     quality: index % 2 === 0 ? "HD" : "CAM",
-//     year: "2024",
-//   }));
+// Function to create fetch options with your API key
+const createTmdbOptions = () => {
+  return {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_API_READ_ACCESS_TOKEN}`,
+    },
+  };
+};
 
-// const MovieCard = ({
-//   movie,
-//   onClick,
-// }: {
-//   movie: Movie;
-//   onClick?: (movie: Movie) => void;
-// }) => {
-//   const router = useRouter();
-
-//   const handleClick = () => {
-//     if (onClick) {
-//       onClick(movie);
-//     } else {
-//       router.push({
-//         pathname: "/watch",
-//         query: {
-//           id: movie.id,
-//           title: movie.title,
-//           year: movie.year,
-//           link: movie.link,
-//         },
-//       });
-//     }
-//   };
-
-//   return (
-//     <div className="relative group cursor-pointer">
-//       <div
-//         className="relative aspect-[2/3] overflow-hidden rounded-lg bg-gray-800"
-//         onClick={handleClick}
-//       >
-//         {/* <img
-//           src={movie.imageUrl || movie.image_src || "/api/placeholder/220/330"}
-//           alt={movie.title}
-//           className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-200"
-//           loading="lazy"
-//           onError={(e) => {
-//             e.currentTarget.src = "/placeholder.png";
-//           }}
-//         /> */}
-//         <Image
-//           src={movie.imageUrl || movie.image_src || "/api/placeholder/220/330"}
-//           alt={movie.title}
-//           className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-200"
-//           fill
-//           sizes="(max-width: 768px) 100vw, 220px"
-//           priority={false}
-//           style={{ objectFit: "cover" }}
-//           onError={(e) => {
-//             // Next/image handles errors differently, this is the updated approach
-//             e.currentTarget.src = "/placeholder.png";
-//           }}
-//         />
-//         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-//           <div className="absolute bottom-0 left-0 right-0 p-4">
-//             <div className="text-white text-sm font-medium">
-//               {movie.year}
-//               {(movie.rating || movie.imdb_rating) && (
-//                 <span className="ml-2 bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded">
-//                   ⭐ {movie.rating || movie.imdb_rating}
-//                 </span>
-//               )}
-//             </div>
-//             {movie.quality && (
-//               <div className="text-cyan-400 text-sm mt-1">{movie.quality}</div>
-//             )}
-//             {movie.imdb_votes && (
-//               <div className="text-gray-400 text-xs mt-1">
-//                 {movie.imdb_votes} votes
-//               </div>
-//             )}
-//           </div>
-//         </div>
-//       </div>
-//       <div className="mt-2">
-//         <h3 className="text-gray-300 group-hover:text-white text-sm font-medium truncate">
-//           {movie.title}
-//         </h3>
-//         <div className="text-gray-500 text-xs">{movie.year}</div>
-//       </div>
-//     </div>
-//   );
-// };
+const transformTmdbMovie = (movie: TMDBMovie): TransformedMovie => {
+  return {
+    id: movie.id,
+    title: movie.title || movie.name || "",
+    rating: movie.vote_average,
+    year: movie.release_date
+      ? movie.release_date.substring(0, 4)
+      : movie.first_air_date
+      ? movie.first_air_date.substring(0, 4)
+      : "",
+    imageUrl: movie.poster_path
+      ? `${TMDB_IMAGE_BASE_URL}/w500${movie.poster_path}`
+      : undefined,
+    image_src: movie.poster_path
+      ? `${TMDB_IMAGE_BASE_URL}/w500${movie.poster_path}`
+      : undefined,
+    description: movie.overview,
+    quality: movie.vote_count > 1000 ? "HD" : "SD",
+    imdb_rating: movie.vote_average,
+    imdb_votes: movie.vote_count ? `${movie.vote_count}` : "",
+    genres: movie.genres?.map((g) => g.name) || [],
+    link: `/api/stream/${movie.id}`,
+  };
+};
 
 const MovieCard = ({
   movie,
@@ -145,15 +114,29 @@ const MovieCard = ({
     if (onClick) {
       onClick(movie);
     } else {
-      router.push({
-        pathname: "/watch",
-        query: {
-          id: movie.id,
-          title: movie.title,
-          year: movie.year,
-          link: movie.link,
-        },
-      });
+      // Create a URL-friendly title slug
+      const titleSlug = movie.title
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-");
+
+      // Use the new URL pattern: watch/tmdb_id/title-slug
+      router.push(`/watch/${movie.id}/${titleSlug}`);
+    }
+  };
+
+  const handleTvShowClick = () => {
+    if (onClick) {
+      onClick(movie);
+    } else {
+      // Create a URL-friendly title slug
+      const titleSlug = movie.title
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-");
+
+      // Use the new URL pattern: watch/tmdb_id/title-slug
+      router.push(`/series/${movie.id}/${titleSlug}`);
     }
   };
 
@@ -176,7 +159,7 @@ const MovieCard = ({
           {/* Play Button on hover */}
           <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <button
-              onClick={handleClick}
+              onClick={isTvShow ? handleTvShowClick : handleClick}
               className="bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-full p-3 transition-all duration-200 border border-white/30"
             >
               <Play className="h-8 w-8 text-white fill-white" />
@@ -250,86 +233,6 @@ const MovieCardSkeleton = () => {
   );
 };
 
-// const MovieSection = ({
-//   title,
-//   movies,
-//   isLoading,
-//   category,
-//   onMovieClick,
-// }: MovieSectionProps) => {
-//   const router = useRouter();
-
-//   const handleViewAll = () => {
-//     router.push(`/category/${category}`);
-//   };
-
-//   return (
-//     <section className="mb-12">
-//       <div className="flex items-center justify-between mb-4">
-//         <h2 className="text-xl font-bold text-white">{title}</h2>
-//         <button
-//           onClick={handleViewAll}
-//           className="text-cyan-400 hover:text-cyan-300 text-sm"
-//         >
-//           View All
-//         </button>
-//       </div>
-//       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-//         {isLoading
-//           ? [...Array(10)].map((_, index) => <MovieCardSkeleton key={index} />)
-//           : movies
-//               .slice(0, 10)
-//               .map((movie) => (
-//                 <MovieCard
-//                   key={movie.id}
-//                   movie={movie}
-//                   onClick={onMovieClick}
-//                 />
-//               ))}
-//       </div>
-//     </section>
-//   );
-// };
-
-// const MovieSection = ({
-//   title,
-//   movies,
-//   isLoading,
-//   category,
-//   onMovieClick,
-// }: MovieSectionProps) => {
-//   const router = useRouter();
-
-//   const handleViewAll = () => {
-//     router.push(`/category/${category}`);
-//   };
-
-//   return (
-//     <section className="mb-12">
-//       <div className="flex items-center justify-between mb-4">
-//         <h2 className="text-xl font-bold text-white">{title}</h2>
-//         <button
-//           onClick={handleViewAll}
-//           className="text-cyan-400 hover:text-cyan-300 text-sm"
-//         >
-//           View All
-//         </button>
-//       </div>
-//       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-//         {isLoading
-//           ? [...Array(10)].map((_, index) => <MovieCardSkeleton key={index} />)
-//           : movies.slice(0, 10).map((movie) => (
-//               <MovieCard
-//                 key={movie.id}
-//                 movie={movie}
-//                 onClick={onMovieClick} // This will be undefined when null is passed
-//               />
-//             ))}
-//       </div>
-//     </section>
-//   );
-// };
-
 const MovieSection = ({
   title,
   movies,
@@ -389,27 +292,16 @@ export default function Home() {
   const [latestShows, setLatestShows] = useState<Movie[]>([]);
   const [isLatestMoviesLoading, setIsLatestMoviesLoading] = useState(true);
   const [isLatestShowsLoading, setIsLatestShowsLoading] = useState(true);
-  const [showToast, setShowToast] = useState(false);
 
   const handleClick = (movie: Movie) => {
-    router.push({
-      pathname: "/watch",
-      query: {
-        id: movie.id,
-        title: movie.title,
-        year: movie.year,
-        link: movie.link,
-      },
-    });
-  };
+    // Create a URL-friendly title slug
+    const titleSlug = movie.title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
 
-  const handleTvShowClick = () => {
-    setShowToast(true);
-
-    // Hide the toast after 3 seconds
-    setTimeout(() => {
-      setShowToast(false);
-    }, 3000);
+    // Use the new URL pattern: watch/tmdb_id/title-slug
+    router.push(`/watch/${movie.id}/${titleSlug}`);
   };
 
   const toggleMobileMenu = () => {
@@ -436,21 +328,37 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const fetchTopMovies = async () => {
+    const fetchFeaturedAndTopMovies = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`${API_BASE_URL}/latest_movies`);
+        const response = await fetch(
+          `${TMDB_BASE_URL}/trending/movie/day?language=en-US`,
+          createTmdbOptions()
+        );
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch latest movies");
+          throw new Error(
+            data.status_message || "Failed to fetch trending movies"
+          );
         }
 
         if (data.results && data.results.length > 0) {
-          // Set the first movie as featured
-          setFeaturedMovie(data.results[0]);
+          // Get more details for the featured movie
+          const featuredMovieId = data.results[0].id;
+          const featuredResponse = await fetch(
+            `${TMDB_BASE_URL}/movie/${featuredMovieId}?language=en-US`,
+            createTmdbOptions()
+          );
+          const featuredData = await featuredResponse.json();
+
+          // Set the first movie as featured with detailed info
+          setFeaturedMovie(
+            transformTmdbMovie({ ...data.results[0], ...featuredData })
+          );
+
           // Use the rest for the suggested section
-          setTopMovies(data.results.slice(1));
+          setTopMovies(data.results.slice(1).map(transformTmdbMovie));
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
@@ -459,22 +367,27 @@ export default function Home() {
       }
     };
 
-    fetchTopMovies();
+    fetchFeaturedAndTopMovies();
   }, []);
 
   useEffect(() => {
     const fetchLatestMovies = async () => {
       try {
         setIsLatestMoviesLoading(true);
-        const response = await fetch(`${API_BASE_URL}/top_movies`);
+        const response = await fetch(
+          `${TMDB_BASE_URL}/movie/popular?language=en-US&page=1`,
+          createTmdbOptions()
+        );
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch latest movies");
+          throw new Error(
+            data.status_message || "Failed to fetch popular movies"
+          );
         }
 
         if (data.results && data.results.length > 0) {
-          setLatestMovies(data.results);
+          setLatestMovies(data.results.map(transformTmdbMovie));
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
@@ -486,15 +399,18 @@ export default function Home() {
     const fetchLatestShows = async () => {
       try {
         setIsLatestShowsLoading(true);
-        const response = await fetch(`${API_BASE_URL}/tv_shows`);
+        const response = await fetch(
+          `${TMDB_BASE_URL}/tv/popular?language=en-US&page=1`,
+          createTmdbOptions()
+        );
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch TV shows");
+          throw new Error(data.status_message || "Failed to fetch TV shows");
         }
 
         if (data.results && data.results.length > 0) {
-          setLatestShows(data.results);
+          setLatestShows(data.results.map(transformTmdbMovie));
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
@@ -672,79 +588,6 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 pt-20 pb-16">
-        {/* Featured Section */}
-        {/* {isLoading ? (
-          <FeaturedMovieSkeleton />
-        ) : (
-          featuredMovie && (
-            <div className="relative h-[70vh] mb-12 rounded-lg overflow-hidden">
-              <div className="absolute inset-0 flex justify-center items-center overflow-hidden">
-                <Image
-                  src={
-                    featuredMovie.imageUrl ||
-                    featuredMovie.image_src ||
-                    "/api/placeholder/1200/600"
-                  }
-                  alt={featuredMovie.title}
-                  className="w-auto h-full object-cover scale-110 blur-sm opacity-40"
-                  fill
-                  sizes="100vw"
-                  priority={false}
-                  style={{ objectFit: "cover" }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-black" />
-              </div>
-              <div className="relative h-full flex items-center px-8 max-w-7xl mx-auto">
-                <div className="hidden md:block mr-8">
-                  <div className="overflow-hidden rounded-lg shadow-2xl h-[500px] w-[350px]">
-                    <img
-                      src={
-                        featuredMovie.imageUrl ||
-                        featuredMovie.image_src ||
-                        "/api/placeholder/350/500"
-                      }
-                      alt={featuredMovie.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.jpg";
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <h1 className="text-4xl font-bold text-white mb-2">
-                    {featuredMovie.title}
-                  </h1>
-                  <div className="flex items-center space-x-4 text-gray-300 mb-4">
-                    <span className="flex items-center">
-                      <Star className="w-5 h-5 text-yellow-500 mr-1" />
-                      {featuredMovie.rating || featuredMovie.imdb_rating}
-                    </span>
-                    {featuredMovie.duration && (
-                      <span>{featuredMovie.duration}</span>
-                    )}
-                    {featuredMovie.year && <span>{featuredMovie.year}</span>}
-                    {featuredMovie.quality && (
-                      <span className="bg-cyan-900 text-white px-2 py-1 rounded text-sm">
-                        {featuredMovie.quality}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-gray-300 max-w-2xl mb-6">
-                    {featuredMovie.description || "No description available"}
-                  </p>
-                  <button
-                    className="bg-cyan-400 text-black px-6 py-3 rounded-md hover:bg-cyan-500 transition-colors"
-                    onClick={() => handleClick(featuredMovie)}
-                  >
-                    Watch Now
-                  </button>
-                </div>
-              </div>
-            </div>
-          )
-        )} */}
-
         {isLoading ? (
           <FeaturedMovieSkeleton />
         ) : (
@@ -906,15 +749,8 @@ export default function Home() {
           movies={latestShows}
           isLoading={isLatestShowsLoading}
           category="tv-series"
-          onMovieClick={handleTvShowClick}
+          // onMovieClick={handleTvShowClick}
         />
-
-        {/* Toast Notification */}
-        {showToast && (
-          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-md shadow-lg z-50 animate-fade-in-up">
-            Feature coming soon
-          </div>
-        )}
       </main>
 
       {/* Footer */}
