@@ -150,6 +150,7 @@ const MovieCard = ({
           fill
           sizes="(max-width: 768px) 100vw, 220px"
           priority={false}
+          unoptimized
           style={{ objectFit: "cover" }}
           onError={(e) => {
             e.currentTarget.src = "/placeholder.png";
@@ -399,10 +400,16 @@ export default function Home() {
     const fetchLatestShows = async () => {
       try {
         setIsLatestShowsLoading(true);
+        // const response = await fetch(
+        //   `${TMDB_BASE_URL}/tv/popular?language=en-US&page=1`,
+        //   createTmdbOptions()
+        // );
+
         const response = await fetch(
-          `${TMDB_BASE_URL}/tv/popular?language=en-US&page=1`,
+          `${TMDB_BASE_URL}/tv/top_rated?language=en-US&page=1`,
           createTmdbOptions()
         );
+
         const data = await response.json();
 
         if (!response.ok) {
@@ -605,6 +612,7 @@ export default function Home() {
                   fill
                   sizes="100vw"
                   priority={false}
+                  unoptimized
                   style={{ objectFit: "cover" }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-black" />

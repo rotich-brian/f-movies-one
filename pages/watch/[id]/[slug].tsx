@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import { Menu, Search, X, Star, Share2, Play } from "lucide-react";
 import Link from "next/link";
+import { GetServerSideProps } from "next";
 
 interface TMDBMovieDetails {
   id: number;
@@ -22,7 +23,7 @@ interface TMDBMovieDetails {
   revenue: number;
   homepage: string;
   production_companies: { id: number; name: string; logo_path: string }[];
-  credits?: {
+  credits: {
     cast: {
       id: number;
       name: string;
@@ -36,7 +37,7 @@ interface TMDBMovieDetails {
       department: string;
     }[];
   };
-  videos?: {
+  videos: {
     results: {
       id: string;
       key: string;
@@ -66,7 +67,7 @@ interface MovieDetails {
   imdb_votes?: string;
   image_src?: string;
   urls?: string[];
-  plot?: string;
+  plot?: string; // This is optional so we need optional chaining
   description?: string;
   actors?: string[];
   director?: string;
@@ -78,30 +79,11 @@ interface MovieDetails {
   runtime?: string;
   trailer?: string;
   imdb_id?: string;
-  tmdb_id?: number;
+  tmdb_id?: number; // Make sure this is typed as number
   backdrop_path?: string;
   videos?: { key: string; name: string; type: string }[];
   directors?: string[];
   cast?: { name: string; character: string }[];
-}
-
-interface MovieCardProps {
-  movie: {
-    id: number;
-    title: string;
-    rating: string;
-    duration: string;
-    genres: string[];
-    imageUrl: string;
-    quality: string;
-    year?: string;
-    link?: string;
-    tmdb_id?: number;
-    imdb_rating?: string;
-    imdb_votes?: string;
-    image_src?: string;
-    poster_path?: string;
-  };
 }
 
 // Navigation Component
@@ -285,25 +267,48 @@ const Navigation = ({
   );
 };
 
-// Main WatchPage Component
-export default function WatchPage() {
+interface WatchPageProps {
+  initialMovieDetails: MovieDetails | null;
+  error: string | null;
+  tmdb_id: string | null;
+}
+
+export default function WatchPage({
+  initialMovieDetails,
+  error: initialError,
+  tmdb_id: initialTmdbId,
+}: WatchPageProps) {
   const router = useRouter();
-  const { slug } = router.query;
+  const { slug } = router.query as { slug?: string };
 
-  const tmdb_id =
-    router.query.tmdb_id ||
-    (router.asPath.startsWith("/watch/") && router.asPath.split("/")[2]);
+  // Define the type for tmdb_id
+  const tmdb_id: string | null | undefined =
+    initialTmdbId ||
+    (router.query.tmdb_id as string) ||
+    (router.asPath.startsWith("/watch/")
+      ? router.asPath.split("/")[2]
+      : undefined);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [movieDetails, setMovieDetails] = useState<MovieDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [relatedMovies, setRelatedMovies] = useState<MovieCardProps["movie"][]>(
+  const [movieDetails, setMovieDetails] = useState<MovieDetails | null>(
+    initialMovieDetails || null
+  );
+  const [error, setError] = useState<string>(initialError || "");
+  const [relatedMovies, setRelatedMovies] = useState<TMDBMovieSearchResult[]>(
     []
   );
   const [iframeError, setIframeError] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(!initialMovieDetails);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+
+  // Inside your useEffect
+  useEffect(() => {
+    // If we have initial data from SSR, immediately set loading to false
+    if (initialMovieDetails && initialMovieDetails.tmdb_id == tmdb_id) {
+      setIsLoading(false);
+    }
+  }, [initialMovieDetails, tmdb_id]);
 
   useEffect(() => {
     console.log("Router path:", router.asPath);
@@ -331,10 +336,18 @@ export default function WatchPage() {
     setIframeError(true);
   };
 
-  // Fetch movie details from TMDB API
   useEffect(() => {
     const fetchMovieDetails = async () => {
       if (!tmdb_id) return;
+
+      // }
+      if (
+        initialMovieDetails &&
+        initialMovieDetails.tmdb_id === Number(tmdb_id)
+      ) {
+        console.log("Using server-side movie data");
+        return;
+      }
 
       try {
         console.log(`Fetching movie details for TMDB ID: ${tmdb_id}`);
@@ -434,7 +447,8 @@ export default function WatchPage() {
     } else {
       console.log("No TMDB ID provided");
     }
-  }, [tmdb_id]);
+    // }, [tmdb_id, initialMovieDetails]);
+  }, [tmdb_id, initialMovieDetails?.tmdb_id]);
 
   // Fetch related movies
   useEffect(() => {
@@ -581,16 +595,192 @@ export default function WatchPage() {
     });
   }, [isLoading, movieDetails, relatedMovies, error, iframeError]);
 
+  const RelatedMoviesSection = () => (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-white">
+          {relatedMovies.length > 0 ? "Related Movies" : "Recommended Movies"}
+        </h2>
+        <Link href="/movies" className="text-cyan-400 hover:text-cyan-300">
+          See All
+        </Link>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {isLoading || relatedMovies.length === 0
+          ? Array(15)
+              .fill(null)
+              .map((_, index) => (
+                <div key={index} className="animate-pulse">
+                  <div className="aspect-[2/3] bg-gray-700 rounded-lg mb-2"></div>
+                  <div className="h-4 bg-gray-700 rounded mb-2"></div>
+                  <div className="h-4 w-2/3 bg-gray-700 rounded"></div>
+                </div>
+              ))
+          : relatedMovies.map((movie, index) => (
+              <div key={index} className="relative group cursor-pointer">
+                <div
+                  className="relative aspect-[2/3] overflow-hidden rounded-lg bg-gray-800"
+                  onClick={() =>
+                    router.push(
+                      `/watch/${movie.id}/${movie.title
+                        .toLowerCase()
+                        .replace(/[^\w\s-]/g, "")
+                        .replace(/\s+/g, "-")}`
+                    )
+                  }
+                >
+                  <img
+                    src={
+                      movie.poster_path
+                        ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                        : "/api/placeholder/220/330"
+                    }
+                    alt={movie.title}
+                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-200"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder.png";
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                      <div className="text-white text-sm font-medium">
+                        {movie.release_date
+                          ? movie.release_date.split("-")[0]
+                          : ""}
+                        {movie.vote_average > 0 && (
+                          <span className="ml-2 bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded">
+                            ⭐ {(movie.vote_average / 2).toFixed(1)}
+                          </span>
+                        )}
+                      </div>
+                      {movie.vote_count > 0 && (
+                        <div className="text-gray-400 text-xs mt-1">
+                          {movie.vote_count} votes
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <h3 className="text-gray-300 group-hover:text-white text-sm font-medium truncate">
+                    {movie.title}
+                  </h3>
+                  <div className="text-gray-500 text-xs">
+                    {movie.release_date ? movie.release_date.split("-")[0] : ""}
+                  </div>
+                </div>
+              </div>
+            ))}
+      </div>
+    </section>
+  );
+
   return (
     <div className="min-h-screen bg-[#1a1d24]">
       <Head>
         <title>{`${movieDetails?.title || "Watch Movie"} - FMovies`}</title>
-        <meta
+        {/* <meta
           name="description"
           content={`Watch ${movieDetails?.title} ${
             movieDetails?.year ? `(${movieDetails.year})` : ""
-          } in HD quality`}
+          } in HD quality. ${movieDetails?.plot?.substring(0, 150)}${
+            movieDetails?.plot?.length > 150 ? "..." : ""
+          }`}
+        />  */}
+        <meta
+          name="description"
+          content={`Watch ${movieDetails?.title || "Watch Movie"} ${
+            movieDetails?.year ? `(${movieDetails.year})` : ""
+          } in HD quality. ${movieDetails?.plot?.substring(0, 150) || ""}${
+            movieDetails?.plot && movieDetails.plot.length > 150 ? "..." : ""
+          }`}
         />
+        {movieDetails?.title && (
+          <>
+            {/* Open Graph / Facebook */}
+            <meta property="og:type" content="website" />
+            <meta
+              property="og:url"
+              content={`${process.env.NEXT_PUBLIC_SITE_URL || ""}/watch/${
+                movieDetails.tmdb_id
+              }/${encodeURIComponent(movieDetails.title.toLowerCase())}`}
+            />
+            <meta
+              property="og:title"
+              content={`${movieDetails.title} (${
+                movieDetails.year || "N/A"
+              }) - Watch Online`}
+            />
+            <meta
+              property="og:description"
+              content={
+                movieDetails.plot?.substring(0, 200) ||
+                `Watch ${movieDetails.title} in HD quality`
+              }
+            />
+            <meta
+              property="og:image"
+              content={movieDetails.backdrop_path || movieDetails.image_src}
+            />
+
+            {/* Twitter */}
+            <meta property="twitter:card" content="summary_large_image" />
+            <meta
+              property="twitter:title"
+              content={`${movieDetails.title} (${
+                movieDetails.year || "N/A"
+              }) - Watch Online`}
+            />
+            <meta
+              property="twitter:description"
+              content={
+                movieDetails.plot?.substring(0, 200) ||
+                `Watch ${movieDetails.title} in HD quality`
+              }
+            />
+            <meta
+              property="twitter:image"
+              content={movieDetails.backdrop_path || movieDetails.image_src}
+            />
+
+            {/* Structured Data for Google */}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "Movie",
+                  name: movieDetails.title,
+                  description: movieDetails.plot,
+                  image: movieDetails.image_src,
+                  datePublished: movieDetails.release_date,
+                  genre: movieDetails.genres,
+                  duration: movieDetails.runtime,
+                  aggregateRating: {
+                    "@type": "AggregateRating",
+                    ratingValue: movieDetails.imdb_rating,
+                    ratingCount: parseInt(
+                      movieDetails.imdb_votes?.replace(/[^0-9]/g, "") || "0"
+                    ),
+                    bestRating: "5",
+                    worstRating: "0",
+                  },
+                  director:
+                    movieDetails.directors?.map((name) => ({
+                      "@type": "Person",
+                      name: name,
+                    })) || [],
+                  actor:
+                    movieDetails.cast?.map((actor) => ({
+                      "@type": "Person",
+                      name: actor.name,
+                    })) || [],
+                }),
+              }}
+            />
+          </>
+        )}
       </Head>
 
       <Navigation
@@ -619,9 +809,22 @@ export default function WatchPage() {
           </span>
         </div>
 
-        {error && (
+        {/* {error && (
           <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-md mb-8">
             {error}
+          </div>
+        )} */}
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-md mb-8">
+            <div className="font-bold mb-1">Error loading movie</div>
+            <div>{error}</div>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+            >
+              Try Again
+            </button>
           </div>
         )}
 
@@ -932,7 +1135,7 @@ export default function WatchPage() {
 
         {/* Related Movies Section */}
         <section>
-          <div className="flex items-center justify-between mb-4">
+          {/* <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white">
               {relatedMovies.length > 0
                 ? "Related Movies"
@@ -1008,7 +1211,9 @@ export default function WatchPage() {
                     </div>
                   </div>
                 ))}
-          </div>
+          </div> */}
+
+          <RelatedMoviesSection />
         </section>
       </main>
 
@@ -1032,3 +1237,128 @@ export default function WatchPage() {
     </div>
   );
 }
+
+export const getServerSideProps: GetServerSideProps<WatchPageProps> = async (
+  context
+) => {
+  const { tmdb_id } = context.query as { tmdb_id?: string };
+
+  context.res.setHeader(
+    "Cache-Control",
+    "public, s-maxage=60, stale-while-revalidate=300"
+  );
+
+  // Extract tmdb_id from URL if not in query params
+  const id: string | null =
+    tmdb_id ||
+    (context.req.url?.startsWith("/watch/")
+      ? context.req.url.split("/")[2]
+      : null);
+
+  if (!id) {
+    return {
+      props: {
+        initialMovieDetails: null,
+        error: "No movie ID provided",
+        tmdb_id: null,
+      },
+    };
+  }
+
+  try {
+    // Fetch movie details from TMDB API
+
+    const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+    if (!API_KEY) {
+      throw new Error("API key not found");
+    }
+
+    const apiUrl = `https://api.themoviedb.org/3/movie/${id}?append_to_response=videos,credits&api_key=${API_KEY}`;
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch movie details: ${response.status}`);
+    }
+
+    const tmdbData: TMDBMovieDetails = await response.json();
+
+    // Format directors with proper typing
+    const directors: string[] =
+      tmdbData.credits?.crew
+        .filter((person: { job: string }) => person.job === "Director")
+        .map((director: { name: string }) => director.name) || [];
+
+    // Format cast with proper typing
+    const cast: { name: string; character: string }[] =
+      tmdbData.credits?.cast
+        .slice(0, 10)
+        .map((actor: { name: string; character: string }) => ({
+          name: actor.name,
+          character: actor.character,
+        })) || [];
+
+    // Format videos (trailers) with proper typing
+    const videos: { key: string; name: string; type: string }[] =
+      tmdbData.videos?.results
+        .filter(
+          (video: { site: string; type: string }) =>
+            video.site === "YouTube" &&
+            (video.type === "Trailer" || video.type === "Teaser")
+        )
+        .map((video: { key: string; name: string; type: string }) => ({
+          key: video.key,
+          name: video.name,
+          type: video.type,
+        })) || [];
+
+    // Convert TMDB data to our MovieDetails format
+    const movieData: MovieDetails = {
+      title: tmdbData.title,
+      year: tmdbData.release_date
+        ? new Date(tmdbData.release_date).getFullYear().toString()
+        : "",
+      quality: "HD",
+      imdb_rating: (tmdbData.vote_average / 2).toFixed(1),
+      imdb_votes: `${tmdbData.vote_count.toLocaleString()} votes`,
+      image_src: tmdbData.poster_path
+        ? `https://image.tmdb.org/t/p/w500${tmdbData.poster_path}`
+        : "/placeholder.png",
+      backdrop_path: tmdbData.backdrop_path
+        ? `https://image.tmdb.org/t/p/original${tmdbData.backdrop_path}`
+        : undefined,
+      plot: tmdbData.overview,
+      genres: tmdbData.genres.map((genre: { name: string }) => genre.name),
+      imdb_id: tmdbData.imdb_id,
+      imdb_url: tmdbData.imdb_id
+        ? `https://www.imdb.com/title/${tmdbData.imdb_id}`
+        : undefined,
+      runtime: tmdbData.runtime ? `${tmdbData.runtime} min` : undefined,
+      release_date: tmdbData.release_date,
+      trailer:
+        videos.length > 0
+          ? `https://www.youtube.com/watch?v=${videos[0].key}`
+          : undefined,
+      videos: videos,
+      directors: directors,
+      cast: cast,
+      tmdb_id: tmdbData.id,
+    };
+
+    return {
+      props: {
+        initialMovieDetails: movieData,
+        error: null,
+        tmdb_id: id,
+      },
+    };
+  } catch (err) {
+    console.error("Error fetching movie details:", err);
+    return {
+      props: {
+        initialMovieDetails: null,
+        error: err instanceof Error ? err.message : "An error occurred",
+        tmdb_id: id,
+      },
+    };
+  }
+};

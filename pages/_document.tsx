@@ -93,17 +93,6 @@ class MyDocument extends Document {
               __html: `(function(s,u,z,p){s.src=u,s.setAttribute('data-zone',z),p.appendChild(s);})(document.createElement('script'),'https://shebudriftaiter.net/tag.min.js',8979704,document.body||document.documentElement)`,
             }}
           />
-          {/* <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                (function(s, u, z, p) {
-                  s.src = u;
-                  s.setAttribute('data-zone', z);
-                  p.appendChild(s);
-                })(document.createElement('script'), 'https://shebudriftaiter.net/tag.min.js', 8916200, document.body || document.documentElement);
-              `,
-            }}
-          /> */}
         </Head>
         <body>
           <Main />
