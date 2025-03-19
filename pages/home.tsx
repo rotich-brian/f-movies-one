@@ -400,10 +400,6 @@ export default function Home() {
     const fetchLatestShows = async () => {
       try {
         setIsLatestShowsLoading(true);
-        // const response = await fetch(
-        //   `${TMDB_BASE_URL}/tv/popular?language=en-US&page=1`,
-        //   createTmdbOptions()
-        // );
 
         const response = await fetch(
           `${TMDB_BASE_URL}/tv/top_rated?language=en-US&page=1`,

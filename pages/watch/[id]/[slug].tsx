@@ -311,9 +311,9 @@ export default function WatchPage({
   }, [initialMovieDetails, tmdb_id]);
 
   useEffect(() => {
-    console.log("Router path:", router.asPath);
-    console.log("Extracted TMDB ID:", tmdb_id);
-    console.log("Slug:", slug);
+    // console.log("Router path:", router.asPath);
+    // console.log("Extracted TMDB ID:", tmdb_id);
+    // console.log("Slug:", slug);
   }, [router, tmdb_id, slug]);
 
   // Handle search
@@ -332,7 +332,7 @@ export default function WatchPage({
 
   // Handle iframe errors
   const handleIframeError = () => {
-    console.log("Iframe error occurred");
+    // console.log("Iframe error occurred");
     setIframeError(true);
   };
 
@@ -345,12 +345,12 @@ export default function WatchPage({
         initialMovieDetails &&
         initialMovieDetails.tmdb_id === Number(tmdb_id)
       ) {
-        console.log("Using server-side movie data");
+        // // console.log("Using server-side movie data");
         return;
       }
 
       try {
-        console.log(`Fetching movie details for TMDB ID: ${tmdb_id}`);
+        // console.log(`Fetching movie details for TMDB ID: ${tmdb_id}`);
         setIsLoading(true);
         setError("");
 
@@ -361,7 +361,7 @@ export default function WatchPage({
         }
 
         const apiUrl = `https://api.themoviedb.org/3/movie/${tmdb_id}?append_to_response=videos,credits&api_key=${API_KEY}`;
-        console.log(`Making API request to: ${apiUrl}`);
+        // console.log(`Making API request to: ${apiUrl}`);
 
         const response = await fetch(apiUrl);
 
@@ -370,7 +370,7 @@ export default function WatchPage({
         }
 
         const tmdbData: TMDBMovieDetails = await response.json();
-        console.log("Movie data fetched successfully:", tmdbData.title);
+        // console.log("Movie data fetched successfully:", tmdbData.title);
 
         // Format directors
         const directors =
@@ -432,7 +432,7 @@ export default function WatchPage({
           tmdb_id: tmdbData.id,
         };
 
-        console.log("Processed movie data:", movieData.title);
+        // console.log("Processed movie data:", movieData.title);
         setMovieDetails(movieData);
       } catch (err) {
         console.error("Error fetching movie details:", err);
@@ -445,7 +445,7 @@ export default function WatchPage({
     if (tmdb_id) {
       fetchMovieDetails();
     } else {
-      console.log("No TMDB ID provided");
+      // console.log("No TMDB ID provided");
     }
     // }, [tmdb_id, initialMovieDetails]);
   }, [tmdb_id, initialMovieDetails?.tmdb_id]);
@@ -456,7 +456,7 @@ export default function WatchPage({
       if (!tmdb_id) return;
 
       try {
-        console.log(`Fetching related movies for TMDB ID: ${tmdb_id}`);
+        // console.log(`Fetching related movies for TMDB ID: ${tmdb_id}`);
 
         const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
         if (!API_KEY) {
@@ -465,7 +465,7 @@ export default function WatchPage({
 
         // Fetch recommendations from TMDB
         const recommendationsUrl = `https://api.themoviedb.org/3/movie/${tmdb_id}/recommendations?language=en-US&page=1&api_key=${API_KEY}`;
-        console.log(`Making API request to: ${recommendationsUrl}`);
+        // console.log(`Making API request to: ${recommendationsUrl}`);
 
         const response = await fetch(recommendationsUrl);
 
@@ -476,11 +476,11 @@ export default function WatchPage({
         }
 
         const data = await response.json();
-        console.log(
-          `Recommendations fetched. Total results: ${
-            data.results ? data.results.length : 0
-          }`
-        );
+        // console.log(
+        //   `Recommendations fetched. Total results: ${
+        //     data.results ? data.results.length : 0
+        //   }`
+        // );
 
         if (data.results && data.results.length > 0) {
           const formattedMovies = data.results
@@ -511,18 +511,18 @@ export default function WatchPage({
                 .replace(/\s+/g, "-")}`,
             }));
 
-          console.log(`Processed ${formattedMovies.length} recommendations`);
+          // console.log(`Processed ${formattedMovies.length} recommendations`);
           setRelatedMovies(formattedMovies);
           return;
         }
 
         if (!data.results || data.results.length === 0) {
-          console.log(
-            "No recommendations found, fetching similar movies instead"
-          );
+          // console.log(
+          //   "No recommendations found, fetching similar movies instead"
+          // );
 
           const similarUrl = `https://api.themoviedb.org/3/movie/${tmdb_id}/similar?language=en-US&page=1&api_key=${API_KEY}`;
-          console.log(`Making API request to: ${similarUrl}`);
+          // console.log(`Making API request to: ${similarUrl}`);
 
           const similarResponse = await fetch(similarUrl);
 
@@ -533,11 +533,11 @@ export default function WatchPage({
           }
 
           const similarData = await similarResponse.json();
-          console.log(
-            `Similar movies fetched. Total results: ${
-              similarData.results ? similarData.results.length : 0
-            }`
-          );
+          // console.log(
+          //   `Similar movies fetched. Total results: ${
+          //     similarData.results ? similarData.results.length : 0
+          //   }`
+          // );
 
           if (similarData.results && similarData.results.length > 0) {
             const formattedMovies = similarData.results
@@ -568,10 +568,11 @@ export default function WatchPage({
                   .replace(/\s+/g, "-")}`,
               }));
 
-            console.log(`Processed ${formattedMovies.length} similar movies`);
+            // console.log(`Processed ${formattedMovies.length} similar movies`);
             setRelatedMovies(formattedMovies);
           } else {
-            console.log("No similar movies found either");
+            // console.log("No similar movies found either");
+            console.error("Error fetching related movies");
           }
         }
       } catch (error) {
@@ -586,13 +587,13 @@ export default function WatchPage({
 
   // Log component state changes
   useEffect(() => {
-    console.log("WatchPage component state:", {
-      isLoading,
-      hasMovieDetails: !!movieDetails,
-      relatedMoviesCount: relatedMovies.length,
-      hasError: !!error,
-      iframeError,
-    });
+    // console.log("WatchPage component state:", {
+    //   isLoading,
+    //   hasMovieDetails: !!movieDetails,
+    //   relatedMoviesCount: relatedMovies.length,
+    //   hasError: !!error,
+    //   iframeError,
+    // });
   }, [isLoading, movieDetails, relatedMovies, error, iframeError]);
 
   const RelatedMoviesSection = () => (
@@ -932,9 +933,9 @@ export default function WatchPage({
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = "/placeholder.png";
-                      console.log(
-                        "Movie poster image failed to load, using placeholder"
-                      );
+                      // console.log(
+                      //   "Movie poster image failed to load, using placeholder"
+                      // );
                     }}
                   />
                 </div>

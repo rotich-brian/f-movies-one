@@ -419,9 +419,9 @@ export default function TVSeriesWatchPage() {
   const [isLoadingSeason, setIsLoadingSeason] = useState(false);
 
   useEffect(() => {
-    console.log("Router path:", router.asPath);
-    console.log("Extracted TMDB ID:", tmdb_id);
-    console.log("Slug:", slug);
+    // console.log("Router path:", router.asPath);
+    // console.log("Extracted TMDB ID:", tmdb_id);
+    // console.log("Slug:", slug);
   }, [router, tmdb_id, slug]);
 
   // Handle search
@@ -440,7 +440,7 @@ export default function TVSeriesWatchPage() {
 
   // Handle iframe errors
   const handleIframeError = () => {
-    console.log("Iframe error occurred");
+    // console.log("Iframe error occurred");
     setIframeError(true);
   };
 
@@ -459,7 +459,7 @@ export default function TVSeriesWatchPage() {
       if (!tmdb_id) return;
 
       try {
-        console.log(`Fetching TV show details for TMDB ID: ${tmdb_id}`);
+        // console.log(`Fetching TV show details for TMDB ID: ${tmdb_id}`);
         setIsLoading(true);
         setError("");
 
@@ -470,7 +470,7 @@ export default function TVSeriesWatchPage() {
         }
 
         const apiUrl = `https://api.themoviedb.org/3/tv/${tmdb_id}?append_to_response=videos,credits&api_key=${API_KEY}`;
-        console.log(`Making API request to: ${apiUrl}`);
+        // console.log(`Making API request to: ${apiUrl}`);
 
         const response = await fetch(apiUrl);
 
@@ -481,7 +481,7 @@ export default function TVSeriesWatchPage() {
         }
 
         const tmdbData: TMDBTVDetails = await response.json();
-        console.log("TV show data fetched successfully:", tmdbData.name);
+        // console.log("TV show data fetched successfully:", tmdbData.name);
 
         // Format creators
         const creators =
@@ -549,7 +549,7 @@ export default function TVSeriesWatchPage() {
           status: tmdbData.status,
         };
 
-        console.log("Processed TV show data:", tvShowData.title);
+        // console.log("Processed TV show data:", tvShowData.title);
         setTVShowDetails(tvShowData);
 
         // Set initial season and episode
@@ -582,9 +582,9 @@ export default function TVSeriesWatchPage() {
 
       try {
         setIsLoadingSeason(true);
-        console.log(
-          `Fetching season ${selectedSeason} details for TV show ${tmdb_id}`
-        );
+        // console.log(
+        //   `Fetching season ${selectedSeason} details for TV show ${tmdb_id}`
+        // );
 
         const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
         if (!API_KEY) {
@@ -592,7 +592,7 @@ export default function TVSeriesWatchPage() {
         }
 
         const apiUrl = `https://api.themoviedb.org/3/tv/${tmdb_id}/season/${selectedSeason}?api_key=${API_KEY}`;
-        console.log(`Making API request to: ${apiUrl}`);
+        // console.log(`Making API request to: ${apiUrl}`);
 
         const response = await fetch(apiUrl);
 
@@ -601,9 +601,9 @@ export default function TVSeriesWatchPage() {
         }
 
         const data: TMDBSeasonDetails = await response.json();
-        console.log(
-          `Season ${selectedSeason} data fetched successfully with ${data.episodes.length} episodes`
-        );
+        // console.log(
+        //   `Season ${selectedSeason} data fetched successfully with ${data.episodes.length} episodes`
+        // );
 
         setSeasonDetails(data);
 
@@ -631,7 +631,7 @@ export default function TVSeriesWatchPage() {
       if (!tmdb_id) return;
 
       try {
-        console.log(`Fetching related TV shows for TMDB ID: ${tmdb_id}`);
+        // console.log(`Fetching related TV shows for TMDB ID: ${tmdb_id}`);
 
         const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
         if (!API_KEY) {
@@ -640,7 +640,7 @@ export default function TVSeriesWatchPage() {
 
         // Fetch recommendations from TMDB
         const recommendationsUrl = `https://api.themoviedb.org/3/tv/${tmdb_id}/recommendations?language=en-US&page=1&api_key=${API_KEY}`;
-        console.log(`Making API request to: ${recommendationsUrl}`);
+        // console.log(`Making API request to: ${recommendationsUrl}`);
 
         const response = await fetch(recommendationsUrl);
 
@@ -651,11 +651,11 @@ export default function TVSeriesWatchPage() {
         }
 
         const data = await response.json();
-        console.log(
-          `Recommendations fetched. Total results: ${
-            data.results ? data.results.length : 0
-          }`
-        );
+        // console.log(
+        //   `Recommendations fetched. Total results: ${
+        //     data.results ? data.results.length : 0
+        //   }`
+        // );
 
         if (data.results && data.results.length > 0) {
           const formattedShows = data.results
@@ -685,18 +685,18 @@ export default function TVSeriesWatchPage() {
                 .replace(/\s+/g, "-")}`,
             }));
 
-          console.log(`Processed ${formattedShows.length} recommendations`);
+          // console.log(`Processed ${formattedShows.length} recommendations`);
           setRelatedShows(formattedShows);
           return;
         }
 
         if (!data.results || data.results.length === 0) {
-          console.log(
-            "No recommendations found, fetching similar shows instead"
-          );
+          // console.log(
+          //   "No recommendations found, fetching similar shows instead"
+          // );
 
           const similarUrl = `https://api.themoviedb.org/3/tv/${tmdb_id}/similar?language=en-US&page=1&api_key=${API_KEY}`;
-          console.log(`Making API request to: ${similarUrl}`);
+          // console.log(`Making API request to: ${similarUrl}`);
 
           const similarResponse = await fetch(similarUrl);
 
@@ -707,11 +707,11 @@ export default function TVSeriesWatchPage() {
           }
 
           const similarData = await similarResponse.json();
-          console.log(
-            `Similar shows fetched. Total results: ${
-              similarData.results ? similarData.results.length : 0
-            }`
-          );
+          // console.log(
+          //   `Similar shows fetched. Total results: ${
+          //     similarData.results ? similarData.results.length : 0
+          //   }`
+          // );
 
           if (similarData.results && similarData.results.length > 0) {
             const formattedShows = similarData.results
@@ -741,10 +741,11 @@ export default function TVSeriesWatchPage() {
                   .replace(/\s+/g, "-")}`,
               }));
 
-            console.log(`Processed ${formattedShows.length} similar shows`);
+            // console.log(`Processed ${formattedShows.length} similar shows`);
             setRelatedShows(formattedShows);
           } else {
-            console.log("No similar shows found either");
+            // console.log("No similar shows found either");
+            console.error("Error fetching related shows");
           }
         }
       } catch (error) {
@@ -967,9 +968,9 @@ export default function TVSeriesWatchPage() {
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = "/placeholder.png";
-                      console.log(
-                        "TV show poster image failed to load, using placeholder"
-                      );
+                      // console.log(
+                      //   "TV show poster image failed to load, using placeholder"
+                      // );
                     }}
                   />
                 </div>
