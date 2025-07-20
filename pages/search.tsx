@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
-import { Menu, Search, X, Play } from "lucide-react";
-import Link from "next/link";
+import { Play } from "lucide-react";
+
+import Header from "@/components/HomeHeader";
+import Footer from "@/components/Footer";
 
 interface MovieResult {
   link: string;
@@ -19,37 +21,11 @@ interface MovieResult {
 export default function SearchResults() {
   const router = useRouter();
   const { q } = router.query;
-  const [searchQuery, setSearchQuery] = useState((q as string) || "");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const [searchResults, setSearchResults] = useState<MovieResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [totalResults, setTotalResults] = useState(0);
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-    if (isSearchOpen) setIsSearchOpen(false);
-  };
-
-  const toggleSearch = () => {
-    setIsSearchOpen(!isSearchOpen);
-    if (isMobileMenuOpen) setIsMobileMenuOpen(false);
-  };
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSearch(e);
-    }
-  };
 
   const handleClick = (result: MovieResult) => {
     if (!result.tmdb_id) {
@@ -118,160 +94,8 @@ export default function SearchResults() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      {/* Navigation */}
-      <nav className="bg-[#1a1d24] border-b border-gray-800 fixed w-full top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div
-              className="flex-shrink-0 cursor-pointer"
-              onClick={() => router.push("/")}
-            >
-              <div className="bg-cyan-400 text-white px-4 py-2 rounded-md font-bold">
-                FMovies
-              </div>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex md:items-center md:space-x-4">
-              <Link
-                href="/home"
-                className="text-gray-300 hover:text-white px-3 py-2"
-              >
-                Home
-              </Link>
-              <Link
-                href="/genres"
-                className="text-gray-300 hover:text-white px-3 py-2"
-              >
-                Genres
-              </Link>
-              <Link
-                href="/country"
-                className="text-gray-300 hover:text-white px-3 py-2"
-              >
-                Country
-              </Link>
-              <Link
-                href="/movies"
-                className="text-gray-300 hover:text-white px-3 py-2"
-              >
-                Movies
-              </Link>
-              <Link
-                href="/tv-series"
-                className="text-gray-300 hover:text-white px-3 py-2"
-              >
-                TV-Series
-              </Link>
-              <Link
-                href="/top-imdb"
-                className="text-gray-300 hover:text-white px-3 py-2"
-              >
-                Top IMDb
-              </Link>
-            </div>
-
-            {/* Desktop Search */}
-            <div className="hidden md:block flex-1 max-w-xl ml-8">
-              <form onSubmit={handleSearch}>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search movies or TV shows"
-                    className="w-full bg-white px-4 py-2 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                  >
-                    <Search className="h-5 w-5 text-gray-400" />
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Mobile Controls */}
-            <div className="flex md:hidden items-center space-x-2">
-              <button
-                className="p-2 text-gray-300 hover:text-white"
-                onClick={toggleSearch}
-              >
-                <Search size={24} />
-              </button>
-              <button
-                className="p-2 text-gray-300 hover:text-white"
-                onClick={toggleMobileMenu}
-              >
-                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Search Bar */}
-          {isSearchOpen && (
-            <div className="md:hidden pb-4">
-              <form onSubmit={handleSearch}>
-                <input
-                  type="text"
-                  placeholder="Search movies or TV shows"
-                  className="w-full bg-white px-4 py-2 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                />
-              </form>
-            </div>
-          )}
-
-          {/* Mobile Menu */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden pb-4">
-              <div className="flex flex-col space-y-2">
-                <Link
-                  href="/home"
-                  className="text-gray-300 hover:text-white px-3 py-2"
-                >
-                  Home
-                </Link>
-                <Link
-                  href="/genres"
-                  className="text-gray-300 hover:text-white px-3 py-2"
-                >
-                  Genres
-                </Link>
-                <Link
-                  href="/country"
-                  className="text-gray-300 hover:text-white px-3 py-2"
-                >
-                  Country
-                </Link>
-                <Link
-                  href="/movies"
-                  className="text-gray-300 hover:text-white px-3 py-2"
-                >
-                  Movies
-                </Link>
-                <Link
-                  href="/tv-series"
-                  className="text-gray-300 hover:text-white px-3 py-2"
-                >
-                  TV-Series
-                </Link>
-                <Link
-                  href="/top-imdb"
-                  className="text-gray-300 hover:text-white px-3 py-2"
-                >
-                  Top IMDb
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
-      </nav>
+      {/* Header */}
+      <Header />
 
       {/* Main Content */}
       <main className="flex-grow max-w-7xl mx-auto px-4 pt-24 pb-16 w-full">
@@ -392,22 +216,7 @@ export default function SearchResults() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#1a1d24] border-t border-gray-800 py-8 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 text-center text-gray-400">
-          <p>© 2025 FMovies. All rights reserved.</p>
-          <div className="mt-4 flex flex-wrap justify-center gap-4">
-            <a href="#" className="text-gray-300 hover:text-white">
-              Terms of Service
-            </a>
-            <a href="#" className="text-gray-300 hover:text-white">
-              Privacy Policy
-            </a>
-            <a href="#" className="text-gray-300 hover:text-white">
-              Contact
-            </a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

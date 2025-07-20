@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Header from "@/components/Header";
 import InformationSection from "@/components/InformationSection";
 import Footer from "@/components/Footer";
-import Head from "next/head";
+import SEO from "@/components/SEO";
 
 interface HomePageProps {
   backgroundImage?: string;
@@ -19,6 +19,22 @@ const Home: React.FC<HomePageProps> = ({
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isSearching, setIsSearching] = useState<boolean>(false);
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "FMovies",
+    url: "https://fmoviesone.top",
+    description: "Watch free movies and TV shows online in HD quality",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: "https://fmoviesone.top/search?q={search_term_string}",
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
 
   const handleSearch = async (
     e: React.FormEvent<HTMLFormElement>
@@ -62,6 +78,14 @@ const Home: React.FC<HomePageProps> = ({
 
   return (
     <div className="min-h-screen relative">
+      {/* SEO Component - should be at the top */}
+      <SEO
+        title={`${siteName} - Watch Free Movies Online Free Streaming in HD`}
+        description={`${siteName} - Watch Movies and TV Shows online in HD quality. Stream thousands of movies and series for free with no registration required.`}
+        canonical="/"
+        structuredData={structuredData}
+      />
+
       {/* Background Image with Overlay */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat"
@@ -76,21 +100,6 @@ const Home: React.FC<HomePageProps> = ({
         className="fixed inset-0 bg-black bg-opacity-75"
         style={{ zIndex: -1 }}
       />
-
-      <Head>
-        <title>{siteName} - Watch Free Movies Online</title>
-        <meta
-          name="description"
-          content={`${siteName} is the best site to watch free movies online without downloading. Stream free movies here.`}
-        />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <meta
-          property="og:title"
-          content={`${siteName} - Watch Free Movies Online`}
-        />
-        <meta property="og:description" content={tagline} />
-        <meta property="og:type" content="website" />
-      </Head>
 
       {/* Header Component */}
       <Header />
