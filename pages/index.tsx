@@ -39,7 +39,16 @@ const Home: React.FC<HomePageProps> = ({
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === "Enter") {
-      handleSearch(e as any);
+      e.preventDefault();
+      if (searchQuery.trim()) {
+        setIsSearching(true);
+        router
+          .push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+          .catch((error) => {
+            console.error("Navigation error:", error);
+            setIsSearching(false);
+          });
+      }
     }
   };
 
