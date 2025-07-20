@@ -3,8 +3,8 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { Menu, Search, X, Star, Play } from "lucide-react";
 import Link from "next/link";
-import FeaturedMovieSkeleton from "./FeaturedMovieSkeleton";
 import Image from "next/image";
+import FeaturedMovieSkeleton from "@/components/FeaturedMovieSkeleton";
 
 interface Movie {
   id: number;
