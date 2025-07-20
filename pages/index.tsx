@@ -118,7 +118,7 @@ const Home: React.FC<HomePageProps> = ({
           </div>
 
           {/* Tagline */}
-          <p className="mt-4 sm:mt-6 text-sm sm:text-base lg:text-lg text-gray-200 max-w-2xl mx-auto leading-relaxed px-4">
+          <p className="mt-4 sm:mt-6 text-base lg:text-lg text-gray-200 max-w-2xl mx-auto leading-relaxed px-4">
             {tagline}
           </p>
         </div>
