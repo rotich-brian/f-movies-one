@@ -586,6 +586,20 @@ export default function WatchPage({
             />
           </>
         )}
+
+        {/* Shebudriftaiter Script */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+                (function(s,u,z,p){
+                  s.src=u;
+                  s.setAttribute('data-zone',z);
+                  s.async=true;
+                  p.appendChild(s);
+                })(document.createElement('script'),'https://shebudriftaiter.net/tag.min.js',8979704,document.body||document.documentElement)
+              `,
+          }}
+        />
       </Head>
 
       {/* Header */}

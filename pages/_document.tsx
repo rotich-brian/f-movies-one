@@ -204,7 +204,7 @@ class MyDocument extends Document {
           />
 
           {/* Shebudriftaiter Script */}
-          <script
+          {/* <script
             dangerouslySetInnerHTML={{
               __html: `
                 (function(s,u,z,p){
@@ -215,7 +215,7 @@ class MyDocument extends Document {
                 })(document.createElement('script'),'https://shebudriftaiter.net/tag.min.js',8979704,document.body||document.documentElement)
               `,
             }}
-          />
+          /> */}
         </Head>
         <body>
           {/* Accessibility skip link */}
