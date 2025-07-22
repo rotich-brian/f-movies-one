@@ -12,6 +12,7 @@ function MyApp({ Component, pageProps }: AppProps) {
           FMovies - Watch Free Movies Online Free Streaming in HD | f movies
         </title>
       </Head>
+
       <GoogleAnalytics />
       <Component {...pageProps} />
     </>

@@ -110,8 +110,16 @@ const Home: React.FC<HomePageProps> = ({
       {/* Header Component */}
       <Header />
 
+      {/* Accessibility skip link */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto pt-20 sm:pt-24 lg:pt-28 pb-12 sm:pb-16 lg:pb-20">
+      <main
+        id="main-content"
+        className="max-w-7xl mx-auto pt-20 sm:pt-24 lg:pt-28 pb-12 sm:pb-16 lg:pb-20"
+      >
         {/* Hero Section with Logo */}
         <div className="text-center mb-8 sm:mb-12 lg:mb-16 px-4 sm:px-6">
           <div className="hidden sm:inline-block">

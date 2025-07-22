@@ -93,11 +93,6 @@ class MyDocument extends Document {
           />
         </Head>
         <body>
-          {/* Accessibility skip link */}
-          <a href="#main-content" className="skip-link">
-            Skip to main content
-          </a>
-
           <Main />
           <NextScript />
 
