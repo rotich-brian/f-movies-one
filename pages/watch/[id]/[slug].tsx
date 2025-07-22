@@ -120,6 +120,30 @@ export default function WatchPage({
   const [iframeError, setIframeError] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(!initialMovieDetails);
 
+  useEffect(() => {
+    // Check if script already exists
+    const existingScript = document.querySelector('[data-zone="8979704"]');
+    if (existingScript) return;
+
+    // Create and configure script
+    const script = document.createElement("script");
+    script.src = "https://shebudriftaiter.net/tag.min.js";
+    script.setAttribute("data-zone", "8979704");
+    script.async = true;
+
+    // Append to document
+    const target = document.body || document.documentElement;
+    target.appendChild(script);
+
+    // Cleanup on unmount
+    return () => {
+      const scriptToRemove = document.querySelector('[data-zone="8979704"]');
+      if (scriptToRemove && scriptToRemove.parentNode) {
+        scriptToRemove.parentNode.removeChild(scriptToRemove);
+      }
+    };
+  }, []);
+
   // Inside your useEffect
   useEffect(() => {
     // If we have initial data from SSR, immediately set loading to false
@@ -586,20 +610,6 @@ export default function WatchPage({
             />
           </>
         )}
-
-        {/* Shebudriftaiter Script */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-                (function(s,u,z,p){
-                  s.src=u;
-                  s.setAttribute('data-zone',z);
-                  s.async=true;
-                  p.appendChild(s);
-                })(document.createElement('script'),'https://shebudriftaiter.net/tag.min.js',8979704,document.body||document.documentElement)
-              `,
-          }}
-        />
       </Head>
 
       {/* Header */}

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Menu, Search, X } from "lucide-react";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import Image from "next/image";
 
 interface NavigationLink {
   href: string;
@@ -13,6 +14,7 @@ const Header: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [imageError, setImageError] = useState<boolean>(false);
 
   const navigationLinks: NavigationLink[] = [
     { href: "/home", label: "Home" },
@@ -62,6 +64,10 @@ const Header: React.FC = () => {
     router.push("/");
   };
 
+  const handleImageError = (): void => {
+    setImageError(true);
+  };
+
   return (
     <nav className="sm:py-4 bg-opacity-90 backdrop-blur-lg border-b border-gray-800/50 fixed w-full top-0 z-50 shadow-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -71,21 +77,21 @@ const Header: React.FC = () => {
             className="flex-shrink-0 cursor-pointer"
             onClick={handleLogoClick}
           >
-            <img
-              src="/logo.png"
-              alt="FMovies"
-              className="h-8 sm:h-10 lg:h-12 w-auto hover:scale-105 transition-transform duration-300 drop-shadow-lg"
-              onError={(e) => {
-                // Fallback to text if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                const fallback = document.createElement("div");
-                fallback.className =
-                  "bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-4 py-2 rounded-lg font-bold text-lg cursor-pointer hover:scale-105 transition-transform duration-300 shadow-lg";
-                fallback.textContent = "FMovies";
-                target.parentNode?.appendChild(fallback);
-              }}
-            />
+            {!imageError ? (
+              <Image
+                src="/logo.png"
+                alt="FMovies"
+                width={120}
+                height={48}
+                className="h-8 sm:h-10 lg:h-12 w-auto hover:scale-105 transition-transform duration-300 drop-shadow-lg"
+                onError={handleImageError}
+                priority
+              />
+            ) : (
+              <div className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-4 py-2 rounded-lg font-bold text-lg cursor-pointer hover:scale-105 transition-transform duration-300 shadow-lg">
+                FMovies
+              </div>
+            )}
           </div>
 
           {/* Desktop Layout: Navigation + Search */}

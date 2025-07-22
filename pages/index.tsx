@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
+import Image from "next/image";
 import Header from "@/components/Header";
 import InformationSection from "@/components/InformationSection";
 import Footer from "@/components/Footer";
@@ -19,6 +20,7 @@ const Home: React.FC<HomePageProps> = ({
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [imageError, setImageError] = useState<boolean>(false);
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -76,6 +78,10 @@ const Home: React.FC<HomePageProps> = ({
     router.push("/home");
   };
 
+  const handleImageError = (): void => {
+    setImageError(true);
+  };
+
   return (
     <div className="min-h-screen relative">
       {/* SEO Component - should be at the top */}
@@ -109,21 +115,28 @@ const Home: React.FC<HomePageProps> = ({
         {/* Hero Section with Logo */}
         <div className="text-center mb-8 sm:mb-12 lg:mb-16 px-4 sm:px-6">
           <div className="hidden sm:inline-block">
-            <img
-              src="/logo.png"
-              alt={siteName}
-              className="h-12 lg:h-16 xl:h-20 w-auto mx-auto drop-shadow-2xl"
-              onError={(e) => {
-                // Fallback to text if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                const fallback = document.createElement("div");
-                fallback.className =
-                  "inline-block bg-gradient-to-r from-cyan-400 to-blue-500 bg-opacity-90 backdrop-blur-sm text-white px-6 sm:px-8 lg:px-10 py-3 sm:py-4 lg:py-5 rounded-xl sm:rounded-2xl text-2xl sm:text-3xl lg:text-4xl font-bold shadow-2xl";
-                fallback.textContent = siteName;
-                target.parentNode?.appendChild(fallback);
-              }}
-            />
+            {!imageError ? (
+              <div className="relative h-12 lg:h-16 xl:h-20 w-auto mx-auto">
+                <Image
+                  src="/logo.png"
+                  alt={siteName}
+                  width={320}
+                  height={80}
+                  className="h-12 lg:h-16 xl:h-20 w-auto mx-auto drop-shadow-2xl"
+                  priority
+                  onError={handleImageError}
+                  style={{
+                    objectFit: "contain",
+                    width: "auto",
+                    height: "100%",
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="inline-block bg-gradient-to-r from-cyan-400 to-blue-500 bg-opacity-90 backdrop-blur-sm text-white px-6 sm:px-8 lg:px-10 py-3 sm:py-4 lg:py-5 rounded-xl sm:rounded-2xl text-2xl sm:text-3xl lg:text-4xl font-bold shadow-2xl">
+                {siteName}
+              </div>
+            )}
           </div>
 
           {/* Tagline */}

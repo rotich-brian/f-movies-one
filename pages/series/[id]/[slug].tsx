@@ -419,6 +419,30 @@ export default function TVSeriesWatchPage() {
     }
   }, [tmdb_id, selectedSeason]);
 
+  useEffect(() => {
+    // Check if script already exists
+    const existingScript = document.querySelector('[data-zone="8979704"]');
+    if (existingScript) return;
+
+    // Create and configure script
+    const script = document.createElement("script");
+    script.src = "https://shebudriftaiter.net/tag.min.js";
+    script.setAttribute("data-zone", "8979704");
+    script.async = true;
+
+    // Append to document
+    const target = document.body || document.documentElement;
+    target.appendChild(script);
+
+    // Cleanup on unmount
+    return () => {
+      const scriptToRemove = document.querySelector('[data-zone="8979704"]');
+      if (scriptToRemove && scriptToRemove.parentNode) {
+        scriptToRemove.parentNode.removeChild(scriptToRemove);
+      }
+    };
+  }, []);
+
   // Fetch related TV shows
   useEffect(() => {
     const fetchRelatedShows = async () => {
@@ -563,20 +587,6 @@ export default function TVSeriesWatchPage() {
           content={`Watch ${tvShowDetails?.title} ${
             tvShowDetails?.year ? `(${tvShowDetails.year})` : ""
           } in HD quality`}
-        />
-
-        {/* Shebudriftaiter Script */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-                (function(s,u,z,p){
-                  s.src=u;
-                  s.setAttribute('data-zone',z);
-                  s.async=true;
-                  p.appendChild(s);
-                })(document.createElement('script'),'https://shebudriftaiter.net/tag.min.js',8979704,document.body||document.documentElement)
-              `,
-          }}
         />
       </Head>
 
