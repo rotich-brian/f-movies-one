@@ -98,7 +98,10 @@ export default function SearchResults() {
       <Header />
 
       {/* Main Content */}
-      <main className="flex-grow max-w-7xl mx-auto px-4 pt-24 pb-16 w-full">
+      <main
+        id="main-content"
+        className="flex-grow max-w-7xl mx-auto px-4 pt-24 pb-16 w-full"
+      >
         {/* Search Results Header */}
 
         <div className="mb-8">

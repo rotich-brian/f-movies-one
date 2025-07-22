@@ -164,7 +164,7 @@ export default function Home() {
       <Header />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 pt-20 pb-16">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 pt-20 pb-16">
         {/* Hero Section with Slideshow */}
         <HeroSection
           movies={heroMovies} // Changed from featuredMovie to movies

@@ -123,21 +123,28 @@
   pointer-events: none;
 }
 
-/* Accessibility */
 .skip-link {
   position: absolute;
-  top: -40px;
-  left: 6px;
+  left: -999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 100;
   background: #007aff;
   color: white;
   padding: 8px;
   text-decoration: none;
-  transition: top 0.3s;
-  z-index: 100;
+  border-radius: 4px;
 }
 
 .skip-link:focus {
+  left: 6px;
   top: 6px;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  outline: 2px solid white;
 }
 
 :focus {

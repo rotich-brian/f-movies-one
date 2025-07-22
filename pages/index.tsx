@@ -110,11 +110,6 @@ const Home: React.FC<HomePageProps> = ({
       {/* Header Component */}
       <Header />
 
-      {/* Accessibility skip link */}
-      <a href="#main-content" className="skip-link">
-        Skip to main content
-      </a>
-
       {/* Main Content */}
       <main
         id="main-content"

@@ -615,7 +615,7 @@ export default function WatchPage({
       {/* Header */}
       <Header />
 
-      <main className="max-w-7xl mx-auto px-4 pt-20 pb-16">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 pt-20 pb-16">
         <div className="flex items-center space-x-2 text-sm mb-4">
           <Link href="/" className="text-cyan-400 hover:text-cyan-300">
             Home
