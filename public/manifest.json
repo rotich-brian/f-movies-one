@@ -1,6 +1,14 @@
 {
   "name": "Watch Movies Online Free - Fmoviesone.top",
-  "short_name": "FmoviesOne",
+  "short_name": "Fmoviesone",
+  "description": "Watch free HD movies and TV shows on Fmoviesone. Stream online without registration or downloads.",
+  "lang": "en",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1A1D24",
+  "theme_color": "#1A1D24",
   "icons": [
     {
       "src": "/icon/apple-touch-icon.png",
@@ -23,10 +31,5 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ],
-  "start_url": "/",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#FFFFFF",
-  "theme_color": "#FFFFFF"
+  ]
 }

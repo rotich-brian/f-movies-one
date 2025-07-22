@@ -60,7 +60,7 @@ class MyDocument extends Document {
           <link
             rel="mask-icon"
             href="/icon/safari-pinned-tab.svg"
-            color="#5bbad5"
+            color="#011e25ff"
           />
           <link rel="manifest" href="/manifest.json" />
 

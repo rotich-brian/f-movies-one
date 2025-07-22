@@ -13,10 +13,10 @@ interface SEOProps {
 }
 
 const SEO: React.FC<SEOProps> = ({
-  title = "FMovies - Watch Free Movies Online Free Streaming in HD",
-  description = "FMovies - Watch Movies and TV Shows online in HD quality. Stream thousands of movies and series for free with no registration required.",
+  title = "FMovies - Watch Free Movies Online Free Streaming in HD | f movies",
+  description = "Watch free movies and TV shows online on Fmovies. Stream HD content across genres, featuring the latest releases, trending titles, and classic favorites — all free.",
   canonical = "https://fmoviesone.top",
-  ogImage = "/images/og-image.jpg",
+  ogImage = "/img/fbimage.png",
   ogType = "website",
   twitterCard = "summary_large_image",
   noindex = false,
