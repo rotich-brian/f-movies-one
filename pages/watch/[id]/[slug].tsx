@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
-import { Star, Share2, Play } from "lucide-react";
 import Link from "next/link";
 import { GetServerSideProps } from "next";
 import Header from "@/components/HomeHeader";
 import Footer from "@/components/Footer";
+import MoviePlayerDetails from "@/components/movie/MoviePlayerDetails";
+import RelatedMovies from "@/components/movie/RelatedMovies";
 
 interface TMDBMovieDetails {
   id: number;
@@ -152,11 +153,7 @@ export default function WatchPage({
     }
   }, [initialMovieDetails, tmdb_id]);
 
-  useEffect(() => {
-    // console.log("Router path:", router.asPath);
-    // console.log("Extracted TMDB ID:", tmdb_id);
-    // console.log("Slug:", slug);
-  }, [router, tmdb_id, slug]);
+  useEffect(() => {}, [router, tmdb_id, slug]);
 
   // Handle iframe errors
   const handleIframeError = () => {
@@ -284,8 +281,6 @@ export default function WatchPage({
       if (!tmdb_id) return;
 
       try {
-        // console.log(`Fetching related movies for TMDB ID: ${tmdb_id}`);
-
         const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
         if (!API_KEY) {
           throw new Error("API key not found");
@@ -293,7 +288,6 @@ export default function WatchPage({
 
         // Fetch recommendations from TMDB
         const recommendationsUrl = `https://api.themoviedb.org/3/movie/${tmdb_id}/recommendations?language=en-US&page=1&api_key=${API_KEY}`;
-        // console.log(`Making API request to: ${recommendationsUrl}`);
 
         const response = await fetch(recommendationsUrl);
 
@@ -304,11 +298,6 @@ export default function WatchPage({
         }
 
         const data = await response.json();
-        // console.log(
-        //   `Recommendations fetched. Total results: ${
-        //     data.results ? data.results.length : 0
-        //   }`
-        // );
 
         if (data.results && data.results.length > 0) {
           const formattedMovies = data.results
@@ -361,11 +350,6 @@ export default function WatchPage({
           }
 
           const similarData = await similarResponse.json();
-          // console.log(
-          //   `Similar movies fetched. Total results: ${
-          //     similarData.results ? similarData.results.length : 0
-          //   }`
-          // );
 
           if (similarData.results && similarData.results.length > 0) {
             const formattedMovies = similarData.results
@@ -414,96 +398,13 @@ export default function WatchPage({
   }, [tmdb_id]);
 
   // Log component state changes
-  useEffect(() => {
-    // console.log("WatchPage component state:", {
-    //   isLoading,
-    //   hasMovieDetails: !!movieDetails,
-    //   relatedMoviesCount: relatedMovies.length,
-    //   hasError: !!error,
-    //   iframeError,
-    // });
-  }, [isLoading, movieDetails, relatedMovies, error, iframeError]);
-
-  const RelatedMoviesSection = () => (
-    <section>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-white">
-          {relatedMovies.length > 0 ? "Related Movies" : "Recommended Movies"}
-        </h2>
-        <Link href="/movies" className="text-cyan-400 hover:text-cyan-300">
-          See All
-        </Link>
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {isLoading || relatedMovies.length === 0
-          ? Array(15)
-              .fill(null)
-              .map((_, index) => (
-                <div key={index} className="animate-pulse">
-                  <div className="aspect-[2/3] bg-gray-700 rounded-lg mb-2"></div>
-                  <div className="h-4 bg-gray-700 rounded mb-2"></div>
-                  <div className="h-4 w-2/3 bg-gray-700 rounded"></div>
-                </div>
-              ))
-          : relatedMovies.map((movie, index) => (
-              <div key={index} className="relative group cursor-pointer">
-                <div
-                  className="relative aspect-[2/3] overflow-hidden rounded-lg bg-gray-800"
-                  onClick={() =>
-                    router.push(
-                      `/watch/${movie.id}/${movie.title
-                        .toLowerCase()
-                        .replace(/[^\w\s-]/g, "")
-                        .replace(/\s+/g, "-")}`
-                    )
-                  }
-                >
-                  <img
-                    src={
-                      movie.poster_path
-                        ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-                        : "/api/placeholder/220/330"
-                    }
-                    alt={movie.title}
-                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-200"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.src = "/placeholder.png";
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <div className="text-white text-sm font-medium">
-                        {movie.release_date
-                          ? movie.release_date.split("-")[0]
-                          : ""}
-                        {movie.vote_average > 0 && (
-                          <span className="ml-2 bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded">
-                            ⭐ {(movie.vote_average / 2).toFixed(1)}
-                          </span>
-                        )}
-                      </div>
-                      {movie.vote_count > 0 && (
-                        <div className="text-gray-400 text-xs mt-1">
-                          {movie.vote_count} votes
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <h3 className="text-gray-300 group-hover:text-white text-sm font-medium truncate">
-                    {movie.title}
-                  </h3>
-                  <div className="text-gray-500 text-xs">
-                    {movie.release_date ? movie.release_date.split("-")[0] : ""}
-                  </div>
-                </div>
-              </div>
-            ))}
-      </div>
-    </section>
-  );
+  useEffect(() => {}, [
+    isLoading,
+    movieDetails,
+    relatedMovies,
+    error,
+    iframeError,
+  ]);
 
   return (
     <div className="min-h-screen bg-[#1a1d24]">
@@ -615,8 +516,11 @@ export default function WatchPage({
       {/* Header */}
       <Header />
 
-      <main id="main-content" className="max-w-7xl mx-auto px-4 pt-20 pb-16">
-        <div className="flex items-center space-x-2 text-sm mb-4">
+      <main
+        id="main-content"
+        className="max-w-7xl mx-auto px-4 pt-20 sm:pt-24 pb-16"
+      >
+        <div className="flex items-center space-x-2 sm:pt-4 text-sm sm:text-base mb-4">
           <Link href="/" className="text-cyan-400 hover:text-cyan-300">
             Home
           </Link>
@@ -649,315 +553,16 @@ export default function WatchPage({
           </div>
         )}
 
-        {/* Video Player Section - Improved iframe player */}
-        <div className="relative w-full mb-8">
-          {isLoading ? (
-            <div className="w-full aspect-video bg-gray-900 rounded-lg">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="animate-pulse flex flex-col items-center">
-                  <div className="w-16 h-16 bg-gray-700 rounded-full mb-4"></div>
-                  <div className="h-4 w-32 bg-gray-700 rounded"></div>
-                </div>
-              </div>
-            </div>
-          ) : !movieDetails ? (
-            <div className="w-full aspect-video bg-gray-900 rounded-lg flex items-center justify-center">
-              <div className="text-white text-center p-4">
-                <h3 className="text-xl mb-2">Unable to load movie</h3>
-                <p className="text-gray-400">
-                  {error || "Please check the movie ID or try again later"}
-                </p>
-              </div>
-            </div>
-          ) : movieDetails?.imdb_id && !iframeError ? (
-            <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-xl">
-              <iframe
-                src={`https://vidsrc.me/embed/movie?imdb=${movieDetails.imdb_id}`}
-                style={{ width: "100%", height: "100%" }}
-                className="w-full h-full"
-                frameBorder="0"
-                referrerPolicy="origin"
-                allowFullScreen
-                onError={handleIframeError}
-              />
-            </div>
-          ) : (
-            <div
-              className="w-full aspect-video bg-gray-900 rounded-lg relative cursor-pointer"
-              style={{
-                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url(${
-                  movieDetails?.backdrop_path ||
-                  movieDetails?.image_src ||
-                  "/placeholder.png"
-                })`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            >
-              <div className="absolute inset-0 flex items-center justify-center flex-col">
-                <div className="text-white text-xl mb-4 font-bold">
-                  {movieDetails?.title}
-                </div>
-                <a
-                  href={movieDetails?.trailer}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-cyan-400 rounded-full p-4 cursor-pointer hover:bg-cyan-500 transition-colors"
-                >
-                  <Play className="w-12 h-12 text-white" />
-                </a>
-                <div className="text-white text-sm mt-4">Watch Trailer</div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Toggle button to retry iframe if it fails */}
-        {!isLoading && movieDetails?.imdb_id && iframeError && (
-          <div className="flex justify-center mb-4">
-            <button
-              onClick={() => setIframeError(false)}
-              className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors"
-            >
-              Retry Player
-            </button>
-          </div>
-        )}
-
-        {/* Movie Details Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-          {/* Movie Poster and Title */}
-          <div className="bg-gray-800 rounded-lg p-6">
-            {isLoading ? (
-              <>
-                <div className="animate-pulse h-8 w-3/4 bg-gray-700 rounded mb-6"></div>
-                <div className="animate-pulse aspect-[2/3] bg-gray-700 rounded-lg mb-4"></div>
-                <div className="flex items-center gap-2">
-                  <div className="animate-pulse h-6 w-16 bg-gray-700 rounded-md"></div>
-                  <span className="text-gray-700">•</span>
-                  <div className="animate-pulse h-6 w-12 bg-gray-700 rounded"></div>
-                </div>
-              </>
-            ) : (
-              <>
-                <h1 className="text-xl font-bold text-white p-4">
-                  {movieDetails?.title}{" "}
-                  {movieDetails?.year ? `(${movieDetails.year})` : ""}
-                </h1>
-
-                <div className="relative aspect-[2/3] mb-4 hidden md:block">
-                  <img
-                    src={movieDetails?.image_src || `/placeholder.png`}
-                    alt={movieDetails?.title}
-                    className="w-full h-full object-cover rounded-lg"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "/placeholder.png";
-                      // console.log(
-                      //   "Movie poster image failed to load, using placeholder"
-                      // );
-                    }}
-                  />
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 text-gray-300 mb-4">
-                  <span className="bg-cyan-400 text-white px-2 py-1 rounded text-sm">
-                    {movieDetails?.quality}
-                  </span>
-                  {movieDetails?.runtime && (
-                    <>
-                      <span>•</span>
-                      <span>{movieDetails.runtime}</span>
-                    </>
-                  )}
-                  {movieDetails?.release_date && (
-                    <>
-                      <span>•</span>
-                      <span>
-                        {new Date(movieDetails.release_date).getFullYear()}
-                      </span>
-                    </>
-                  )}
-                </div>
-
-                {movieDetails?.genres && movieDetails.genres.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {movieDetails.genres.map((genre, index) => (
-                      <span
-                        key={index}
-                        className="bg-gray-700 text-gray-300 px-2 py-1 rounded text-xs"
-                      >
-                        {genre}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Movie Description and Ratings */}
-          <div className="bg-gray-800 rounded-lg p-6">
-            {isLoading ? (
-              <>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="animate-pulse h-6 w-16 bg-gray-700 rounded flex items-center"></div>
-                  <div className="animate-pulse h-5 w-32 bg-gray-700 rounded"></div>
-                </div>
-                <div className="space-y-2">
-                  <div className="animate-pulse h-4 w-full bg-gray-700 rounded"></div>
-                  <div className="animate-pulse h-4 w-full bg-gray-700 rounded"></div>
-                  <div className="animate-pulse h-4 w-3/4 bg-gray-700 rounded"></div>
-                </div>
-              </>
-            ) : (
-              <>
-                <h3 className="text-white font-semibold text-xl mb-4">
-                  Movie Details
-                </h3>
-
-                <div className="flex items-center gap-4 mb-6">
-                  {movieDetails?.imdb_rating && (
-                    <div className="flex items-center">
-                      <Star className="w-5 h-5 text-yellow-500 mr-1" />
-                      <span className="text-white font-bold text-lg">
-                        {movieDetails.imdb_rating}
-                      </span>
-                    </div>
-                  )}
-                  {movieDetails?.imdb_votes && (
-                    <span className="text-gray-300 text-sm">
-                      {movieDetails.imdb_votes}
-                    </span>
-                  )}
-                  {movieDetails?.imdb_url && (
-                    <a
-                      href={movieDetails.imdb_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-cyan-400 hover:text-cyan-300 text-sm"
-                    >
-                      IMDb
-                    </a>
-                  )}
-                </div>
-
-                <div className="mb-6">
-                  <h4 className="text-gray-200 font-medium mb-2">Synopsis</h4>
-                  <p className="text-gray-300">
-                    {movieDetails?.plot || "No plot available"}
-                  </p>
-                </div>
-
-                {movieDetails?.directors &&
-                  movieDetails.directors.length > 0 && (
-                    <div className="mb-3">
-                      <h4 className="text-gray-200 font-medium mb-1">
-                        Director{movieDetails.directors.length > 1 ? "s" : ""}
-                      </h4>
-                      <p className="text-gray-300">
-                        {movieDetails.directors.join(", ")}
-                      </p>
-                    </div>
-                  )}
-
-                {movieDetails?.cast && movieDetails.cast.length > 0 && (
-                  <div>
-                    <h4 className="text-gray-200 font-medium mb-1">Cast</h4>
-                    <p className="text-gray-300">
-                      {movieDetails.cast.map((actor) => actor.name).join(", ")}
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Trailer and Information */}
-          <div className="bg-gray-800 rounded-lg p-6">
-            {isLoading ? (
-              <>
-                <div className="animate-pulse h-6 w-40 bg-gray-700 rounded mb-4"></div>
-                <div className="animate-pulse h-48 w-full bg-gray-700 rounded-lg mb-4"></div>
-                <div className="space-y-4">
-                  <div className="animate-pulse h-12 w-full bg-gray-700 rounded-lg"></div>
-                  <div className="animate-pulse h-12 w-full bg-gray-700 rounded-lg"></div>
-                </div>
-              </>
-            ) : (
-              <>
-                <h3 className="text-white font-semibold text-xl mb-4">
-                  Trailer
-                </h3>
-
-                {movieDetails?.videos && movieDetails.videos.length > 0 ? (
-                  <div className="aspect-video mb-6">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${movieDetails.videos[0].key}`}
-                      className="w-full h-full rounded-lg"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center bg-gray-700 aspect-video rounded-lg mb-6">
-                    <p className="text-gray-400">No trailer available</p>
-                  </div>
-                )}
-
-                {/* Watch Options */}
-                <h3 className="text-white font-semibold mb-4">Watch Options</h3>
-
-                {movieDetails?.imdb_id ? (
-                  <a
-                    href="#top"
-                    onClick={() => {
-                      if (iframeError) {
-                        setIframeError(false);
-                      }
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                    className="w-full flex items-center justify-center px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-4"
-                  >
-                    <Play className="w-5 h-5 mr-2" />
-                    <span>Watch Movie Now</span>
-                  </a>
-                ) : (
-                  <div className="w-full px-4 py-3 bg-gray-700 text-gray-400 rounded-lg mb-4 text-center">
-                    No streaming source available
-                  </div>
-                )}
-
-                {/* Share Button */}
-                <button
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: movieDetails?.title,
-                        text: `Watch ${movieDetails?.title} ${
-                          movieDetails?.year || ""
-                        }`,
-                        url: window.location.href,
-                      });
-                    } else {
-                      navigator.clipboard.writeText(window.location.href);
-                      alert("Link copied to clipboard!");
-                    }
-                  }}
-                  className="w-full flex items-center justify-center mt-4 px-4 py-3 bg-gray-700 rounded-lg text-white hover:bg-gray-600"
-                >
-                  <Share2 className="w-5 h-5 mr-2" />
-                  <span>Share Movie</span>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
+        <MoviePlayerDetails
+          movieDetails={movieDetails}
+          isLoading={isLoading}
+          iframeError={iframeError}
+          onIframeError={handleIframeError}
+          onRetryPlayer={() => setIframeError(false)}
+        />
 
         {/* Related Movies Section */}
-        <section>
-          <RelatedMoviesSection />
-        </section>
+        <RelatedMovies relatedMovies={relatedMovies} isLoading={isLoading} />
       </main>
 
       {/* Footer */}
